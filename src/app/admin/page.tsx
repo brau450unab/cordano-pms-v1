@@ -148,23 +148,30 @@ export default function AdminDashboardPage() {
   const pendingApprovalsCount = pendingExceptions.filter((e) => e.estado === 'PENDIENTE').length;
 
   return (
-    <div className="min-h-screen bg-[#F9F9FB] text-slate-900 flex flex-col font-sans selection:bg-[#80093A] selection:text-white">
+    <div className="min-h-screen bg-[#06080E] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white relative overflow-hidden">
+      {/* Background Texture from Magnific AI */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none mix-blend-screen"
+        style={{ backgroundImage: "url('/hub-bg.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#06080E]/60 to-[#06080E] pointer-events-none" />
+
       {/* BARRA SUPERIOR MINIMALISTA macOS */}
-      <header className="bg-slate-900 text-white sticky top-0 z-40 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="relative z-40 glass-panel mx-4 mt-4 rounded-[2rem] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link
-              href="/"
-              className="w-9 h-9 rounded-xl overflow-hidden border border-slate-700 bg-black flex items-center justify-center hover:opacity-90 transition"
-              title="Volver al Punto de Venta Garita"
+              href="/hub"
+              className="w-10 h-10 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition"
+              title="Volver al Menú Principal (Launchpad)"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/cordano-logo.png" alt="Cordano Logo" className="w-full h-full object-contain p-0.5" />
+              <img src="/cordano-logo.png" alt="Cordano Logo" className="w-full h-full object-contain p-1" />
             </Link>
             <div>
-              <span className="font-bold text-base tracking-wide text-white flex items-center gap-2">
+              <span className="font-extrabold text-base tracking-wide text-white flex items-center gap-2">
                 CORDANO ADMIN
-                <span className="bg-[#80093A] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="bg-[#80093A] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   ERP V4.0
                 </span>
               </span>
@@ -175,10 +182,10 @@ export default function AdminDashboardPage() {
           {/* Navegación Switcher Central */}
           <div className="flex items-center gap-2">
             {activeModule !== 'launcher' ? (
-              <div className="flex items-center gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-1.5 glass-panel p-1 rounded-2xl">
                 <button
                   onClick={() => setActiveModule('launcher')}
-                  className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 macos-btn text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
                   title="Volver a la cuadrícula de módulos"
                 >
                   <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
@@ -190,13 +197,13 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setActiveModule(e.target.value as AdminModule)}
                   className="bg-transparent text-xs text-white font-semibold outline-none px-2 py-1 cursor-pointer"
                 >
-                  <option value="overview" className="bg-slate-800 text-white">
+                  <option value="overview" className="bg-[#06080E] text-white">
                     📊 Monitoreo y Plazas
                   </option>
-                  <option value="approvals" className="bg-slate-800 text-white">
+                  <option value="approvals" className="bg-[#06080E] text-white">
                     🔑 Cola de Aprobaciones ({pendingApprovalsCount})
                   </option>
-                  <option value="shifts" className="bg-slate-800 text-white">
+                  <option value="shifts" className="bg-[#06080E] text-white">
                     💼 Turnos y Arqueo Ciego
                   </option>
                 </select>
@@ -209,7 +216,7 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={handleExportCSV}
-              className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
+              className="px-3.5 py-2 macos-btn text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
               title="Descargar auditoría completa en CSV/Excel"
             >
               <Download className="w-3.5 h-3.5" />
@@ -218,9 +225,9 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/"
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition"
+              className="px-3.5 py-2 macos-btn-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
             >
-              <Car className="w-3.5 h-3.5 text-sky-400" />
+              <Car className="w-3.5 h-3.5 text-white" />
               <span className="hidden sm:inline">Garita POS</span>
             </Link>
           </div>
@@ -228,7 +235,7 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* CUERPO PRINCIPAL */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* ALERTA DE ÉXITO */}
         {actionSuccess && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">

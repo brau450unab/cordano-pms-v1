@@ -118,17 +118,24 @@ export default function ConveniosPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white">
+    <div className="min-h-screen bg-[#06080E] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white relative overflow-hidden">
+      {/* Background Texture from Magnific AI */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none mix-blend-screen"
+        style={{ backgroundImage: "url('/hub-bg.jpg')" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#06080E]/60 to-[#06080E] pointer-events-none" />
+
       {/* Header macOS Metalizado */}
-      <header className="sticky top-0 z-40 backdrop-blur-2xl bg-[#090D17]/85 border-b border-white/[0.08] shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="relative z-40 glass-panel mx-4 mt-4 rounded-[2rem] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Link
               href="/hub"
               title="Volver al Launchpad"
-              className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white transition"
+              className="p-3 rounded-2xl macos-btn hover:scale-105 active:scale-95 transition"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-5 h-5 text-slate-300" />
             </Link>
             <div>
               <span className="font-extrabold text-base tracking-tight text-white block">
@@ -143,23 +150,23 @@ export default function ConveniosPage() {
           <div className="flex items-center gap-3 text-xs">
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#80093A] to-[#A52C55] hover:opacity-95 text-white font-bold transition flex items-center gap-2 border border-white/20 shadow-lg shadow-[#80093A]/40 active:scale-95"
+              className="macos-btn-primary px-5 py-2.5 rounded-2xl text-white font-bold flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               <span>Nuevo Convenio</span>
             </button>
             <Link
               href="/hub"
-              className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white transition"
+              className="p-3 rounded-2xl macos-btn text-slate-300 hover:text-white transition"
               title="Launchpad"
             >
-              <Grid className="w-4 h-4" />
+              <Grid className="w-5 h-5" />
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 flex-1">
+      <main className="relative z-10 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 flex-1">
         {successMsg && (
           <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs rounded-2xl flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
