@@ -160,6 +160,69 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* INSTALACIONES & ARQUITECTURA SERRANO 447 (Magnific AI Renders) */}
+      <section id="instalaciones" className="relative z-10 py-20 px-4 max-w-6xl mx-auto w-full space-y-12">
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-xs font-bold text-cyan-300">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Infraestructura Física • Serrano 447, Iquique</span>
+          </div>
+          <h2 className="text-4xl font-black text-white tracking-tight">Instalaciones de Primer Nivel</h2>
+          <p className="text-sm text-slate-400 font-mono max-w-xl mx-auto">
+            Seguridad automatizada, circuito cerrado y accesos vehiculares de alta velocidad.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            {
+              title: 'Acceso Automatizado LPR',
+              desc: 'Barreras italianas de alta frecuencia y lectura óptica OCR de matrículas en milisegundos.',
+              tag: 'Barreras & LPR',
+              image: '/login-panel.jpg',
+            },
+            {
+              title: 'Matriz Espacial 30 Plazas',
+              desc: 'Layout de 700 m² con pasillo de maniobra unidireccional, bahías techadas y plazas PMR.',
+              tag: 'Serrano 447',
+              image: '/serrano_render.jpg',
+            },
+            {
+              title: 'Vigilancia & Garita Central',
+              desc: 'Monitoreo ininterrumpido 24/7 con CCTV de alta definición y respaldo energético offline.',
+              tag: 'Seguridad 24/7',
+              image: '/landing-hero.jpg',
+            },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className="group glass-panel rounded-3xl overflow-hidden flex flex-col justify-between spring-anim hover:-translate-y-2 hover:border-cyan-500/40"
+            >
+              <div className="h-56 relative overflow-hidden bg-black/50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#06080E] via-transparent to-transparent" />
+                <span className="absolute top-4 left-4 text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-black/70 border border-white/20 text-cyan-300 backdrop-blur-md">
+                  {item.tag}
+                </span>
+              </div>
+              <div className="p-6 space-y-2">
+                <h3 className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* FAQ ACORDEÓN METALIZADO */}
       <section id="faq" className="relative z-10 py-20 px-4 max-w-3xl mx-auto w-full space-y-10">
         <div className="text-center">

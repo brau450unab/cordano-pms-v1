@@ -156,7 +156,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleSelectRole('operador')}
-                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group"
+                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group min-h-[56px]"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center">
@@ -173,7 +173,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleSelectRole('admin')}
-                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group"
+                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group min-h-[56px]"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
@@ -185,6 +185,16 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-white transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRoleSelector(false)}
+                className="text-xs font-bold text-slate-400 hover:text-white transition py-2 px-4 rounded-xl macos-btn"
+              >
+                Cancelar y cambiar credenciales
               </button>
             </div>
           </div>

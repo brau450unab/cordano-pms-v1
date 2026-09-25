@@ -49,7 +49,7 @@ export const SerranoLayoutMap: React.FC<SerranoLayoutMapProps> = ({
   };
 
   return (
-    <div className="bg-[#0B0F19] rounded-3xl border border-white/10 shadow-2xl p-4 sm:p-5 flex flex-col h-full space-y-4">
+    <div className="glass-panel rounded-3xl p-4 sm:p-5 flex flex-col h-full space-y-4">
       {/* Cabecera con Métricas y Estado */}
       <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
         <div>
