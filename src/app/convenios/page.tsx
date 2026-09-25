@@ -1,368 +1,471 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { MacOSNavigationShell } from '@/components/MacOSNavigationShell';
 import {
-  ArrowLeft,
+  Moon,
   Building2,
-  Calendar,
-  DollarSign,
-  Car,
-  CheckCircle2,
   Plus,
-  X,
-  Grid,
   Search,
-  Phone,
-  Mail,
-  UserCheck,
-  Clock
+  ShieldCheck,
+  CheckCircle2,
+  X,
+  Eye,
+  Lock
 } from 'lucide-react';
 
-interface Convenio {
+interface ParallelServiceRecord {
   id: string;
-  cliente: string;
-  rut: string;
   patente: string;
-  tipo: 'CONVENIO_EMPRESA' | 'PERNOCTA_MENSUAL';
-  slotAsignado?: string;
-  montoMensual: number;
-  estadoPago: 'AL_DIA' | 'PENDIENTE' | 'VENCIDO';
-  vigenciaHasta: string;
-  telefono: string;
+  titular: string;
+  empresa: string;
+  modalidad: 'CONVENIO_MENSUAL' | 'PERNOCTA_NOCHE';
+  plazaBloqueada: string;
+  tarifaFija: number;
+  vigencia: string;
+  estado: 'ACTIVO' | 'POR_VENCER';
 }
 
-const INITIAL_CONVENIOS: Convenio[] = [
+const INITIAL_CONVENIOS: ParallelServiceRecord[] = [
   {
-    id: 'CNV-01',
-    cliente: 'Estudio Jurídico Serrano Ltda.',
-    rut: '76.890.123-4',
-    patente: 'JKLP34',
-    tipo: 'CONVENIO_EMPRESA',
-    slotAsignado: 'A-02',
-    montoMensual: 75000,
-    estadoPago: 'AL_DIA',
-    vigenciaHasta: '2026-10-31',
-    telefono: '+56 9 8123 4567',
+    id: 'CNV-2026-01',
+    patente: 'JK-LP-34',
+    titular: 'Rodrigo Poblete',
+    empresa: 'Notaría Serrano 447',
+    modalidad: 'CONVENIO_MENSUAL',
+    plazaBloqueada: 'A-03 (VIP)',
+    tarifaFija: 85000,
+    vigencia: '01/04/2026 – 30/04/2026',
+    estado: 'ACTIVO',
   },
   {
-    id: 'CNV-02',
-    cliente: 'Consulado General de Italia',
-    rut: '69.001.002-3',
-    patente: 'CDAB89',
-    tipo: 'CONVENIO_EMPRESA',
-    slotAsignado: 'B-18',
-    montoMensual: 75000,
-    estadoPago: 'AL_DIA',
-    vigenciaHasta: '2026-11-15',
-    telefono: '+56 9 7654 3210',
+    id: 'CNV-2026-02',
+    patente: 'CD-AB-89',
+    titular: 'Consulado de Italia',
+    empresa: 'Cuerpo Consular Iquique',
+    modalidad: 'CONVENIO_MENSUAL',
+    plazaBloqueada: 'B-18 (VIP)',
+    tarifaFija: 90000,
+    vigencia: '01/04/2026 – 30/04/2026',
+    estado: 'ACTIVO',
   },
   {
-    id: 'CNV-03',
-    cliente: 'Transportes Marítimos del Norte',
-    rut: '77.445.678-9',
-    patente: 'FGHI12',
-    tipo: 'PERNOCTA_MENSUAL',
-    slotAsignado: 'B-25',
-    montoMensual: 60000,
-    estadoPago: 'PENDIENTE',
-    vigenciaHasta: '2026-09-30',
-    telefono: '+56 9 9988 7766',
+    id: 'PRN-2026-03',
+    patente: 'WX-YZ-19',
+    titular: 'Transportes Tarapacá',
+    empresa: 'Hotel Gavina Express (Pernocta)',
+    modalidad: 'PERNOCTA_NOCHE',
+    plazaBloqueada: 'B-22 (Reservada)',
+    tarifaFija: 5000,
+    vigencia: '21:00 PM – 08:00 AM',
+    estado: 'ACTIVO',
+  },
+  {
+    id: 'PRN-2026-04',
+    patente: 'MN-PQ-77',
+    titular: 'Fabián Morales',
+    empresa: 'Pernocta Particular Nocturna',
+    modalidad: 'PERNOCTA_NOCHE',
+    plazaBloqueada: 'A-14 (Reservada)',
+    tarifaFija: 5000,
+    vigencia: '22:00 PM – 08:00 AM',
+    estado: 'POR_VENCER',
   },
 ];
 
 export default function ConveniosPage() {
-  const [convenios, setConvenios] = useState<Convenio[]>(INITIAL_CONVENIOS);
-  const [busqueda, setBusqueda] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [records, setRecords] = useState<ParallelServiceRecord[]>(INITIAL_CONVENIOS);
+  const [filterMode, setFilterMode] = useState<'ALL' | 'CONVENIO_MENSUAL' | 'PERNOCTA_NOCHE'>('ALL');
+  const [search, setSearch] = useState('');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [showMockup, setShowMockup] = useState(false);
 
-  const [newCliente, setNewCliente] = useState('');
-  const [newRut, setNewRut] = useState('');
+  // Formulario Pop-up de Nuevo Convenio / Pernocta en Paralelo
   const [newPatente, setNewPatente] = useState('');
-  const [newTipo, setNewTipo] = useState<'CONVENIO_EMPRESA' | 'PERNOCTA_MENSUAL'>('CONVENIO_EMPRESA');
-  const [newSlot, setNewSlot] = useState('A-05');
-  const [newMonto, setNewMonto] = useState(75000);
-  const [newTelefono, setNewTelefono] = useState('');
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [newTitular, setNewTitular] = useState('');
+  const [newEmpresa, setNewEmpresa] = useState('');
+  const [newModalidad, setNewModalidad] = useState<'CONVENIO_MENSUAL' | 'PERNOCTA_NOCHE'>('PERNOCTA_NOCHE');
+  const [newPlaza, setNewPlaza] = useState('A-09');
 
-  const handleCreateConvenio = (e: React.FormEvent) => {
+  const handleCreateRecord = (e: React.FormEvent) => {
     e.preventDefault();
-    const newEntry: Convenio = {
-      id: `CNV-0${convenios.length + 1}`,
-      cliente: newCliente,
-      rut: newRut,
+    if (!newPatente.trim() || !newTitular.trim()) return;
+
+    const item: ParallelServiceRecord = {
+      id: `${newModalidad === 'CONVENIO_MENSUAL' ? 'CNV' : 'PRN'}-2026-0${records.length + 1}`,
       patente: newPatente.toUpperCase(),
-      tipo: newTipo,
-      slotAsignado: newSlot,
-      montoMensual: Number(newMonto),
-      estadoPago: 'AL_DIA',
-      vigenciaHasta: '2026-10-31',
-      telefono: newTelefono,
+      titular: newTitular,
+      empresa: newEmpresa || 'Particular Serrano 447',
+      modalidad: newModalidad,
+      plazaBloqueada: `${newPlaza} (${newModalidad === 'CONVENIO_MENSUAL' ? 'VIP' : 'Reservada'})`,
+      tarifaFija: newModalidad === 'CONVENIO_MENSUAL' ? 85000 : 5000,
+      vigencia:
+        newModalidad === 'CONVENIO_MENSUAL'
+          ? 'Mensual Vigente'
+          : '21:00 PM – 08:00 AM',
+      estado: 'ACTIVO',
     };
 
-    setConvenios([...convenios, newEntry]);
-    setSuccessMsg(`Convenio para ${newCliente} (${newPatente.toUpperCase()}) registrado exitosamente.`);
-    setShowAddModal(false);
-    setNewCliente('');
-    setNewRut('');
+    setRecords([item, ...records]);
     setNewPatente('');
-    setNewTelefono('');
-    setTimeout(() => setSuccessMsg(null), 4000);
+    setNewTitular('');
+    setNewEmpresa('');
+    setShowNewModal(false);
   };
 
-  const filtered = convenios.filter(
-    (c) =>
-      c.cliente.toLowerCase().includes(busqueda.toLowerCase()) ||
-      c.patente.toLowerCase().includes(busqueda.toLowerCase()) ||
-      c.rut.includes(busqueda)
-  );
+  const filtered = records.filter((r) => {
+    const matchesMode = filterMode === 'ALL' || r.modalidad === filterMode;
+    const matchesSearch =
+      r.patente.toLowerCase().includes(search.toLowerCase()) ||
+      r.titular.toLowerCase().includes(search.toLowerCase()) ||
+      r.empresa.toLowerCase().includes(search.toLowerCase());
+    return matchesMode && matchesSearch;
+  });
 
   return (
-    <div className="min-h-screen bg-[#06080E] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white relative overflow-hidden">
-      {/* Background Texture from Magnific AI */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none mix-blend-screen"
-        style={{ backgroundImage: "url('/hub-bg.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#06080E]/60 to-[#06080E] pointer-events-none" />
-
-      {/* Header macOS Metalizado */}
-      <header className="relative z-40 glass-panel mx-4 mt-4 rounded-[2rem] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/hub"
-              title="Volver al Launchpad"
-              className="p-3 rounded-2xl macos-btn hover:scale-105 active:scale-95 transition"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-300" />
-            </Link>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-white block">
-                CONVENIOS CORPORATIVOS & ABONADOS
-              </span>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Cordano Inversiones Inmobiliarias Ltda. • Serrano 447, Iquique
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="macos-btn-primary px-5 py-2.5 rounded-2xl text-white font-bold flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nuevo Convenio</span>
-            </button>
-            <Link
-              href="/hub"
-              className="p-3 rounded-2xl macos-btn text-slate-300 hover:text-white transition"
-              title="Launchpad"
-            >
-              <Grid className="w-5 h-5" />
-            </Link>
+    <MacOSNavigationShell
+      title="Convenios y Noche (Servicios en Paralelo)"
+      subtitle="Regla 7 AGENTS.md · Bloquea plaza en matriz sin alterar contabilidad rotativa por minuto"
+      roleLabel="Gestión Comercial"
+      rightActions={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowMockup(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Eye className="w-3.5 h-3.5 text-[#80093A]" />
+            <span>Mockup #5</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowNewModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-[#80093A] hover:bg-[#68072f] text-white text-xs font-extrabold flex items-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Nuevo Convenio / Pernocta</span>
+          </button>
+        </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Banner explicativo Regla 7 AGENTS.md */}
+        <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 flex items-start gap-3 text-xs text-blue-950">
+          <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div>
+            <strong className="block text-blue-950">
+              Aislamiento Contable de Servicios en Paralelo (Regla 7):
+            </strong>
+            Los vehículos registrados en este submódulo bloquean su plaza asignada en la matriz de Serrano 447 (en color <strong>Azul #3B82F6</strong> para Abonados/VIP o <strong>Ámbar #F59E0B</strong> para Pernocta Reservada), pero <strong>no ingresan a la lista de transitorios ni alteran el arqueo rotativo por minuto del día</strong>.
           </div>
         </div>
-      </header>
 
-      <main className="relative z-10 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 flex-1">
-        {successMsg && (
-          <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs rounded-2xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{successMsg}</span>
+        {/* Resumen superior */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Abonados Mensuales Activos
+            </span>
+            <div className="text-2xl font-mono font-black text-blue-600 tabular-nums mt-1">
+              {records.filter((r) => r.modalidad === 'CONVENIO_MENSUAL').length} Plazas VIP
+            </div>
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              Facturación mensual recurrente
+            </span>
           </div>
-        )}
 
-        {/* Buscador y Resumen */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-3xl bg-gradient-to-b from-[#111726] to-[#0A0E18] border border-white/10 shadow-xl">
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Vehículos en Pernocta Nocturna
+            </span>
+            <div className="text-2xl font-mono font-black text-amber-600 tabular-nums mt-1">
+              {records.filter((r) => r.modalidad === 'PERNOCTA_NOCHE').length} Plazas Reservadas
+            </div>
+            <span className="text-[11px] text-slate-500 mt-1 block">
+              Tarifa plana $5.000 CLP (21:00 a 08:00)
+            </span>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Recaudación Paralela Mensual
+            </span>
+            <div className="text-2xl font-mono font-black text-[#80093A] tabular-nums mt-1">
+              $185.000 <span className="text-xs text-slate-400">CLP</span>
+            </div>
+            <span className="text-[11px] text-emerald-700 font-semibold mt-1 block">
+              ● Separado de Caja Ciega Rotativa
+            </span>
+          </div>
+        </div>
+
+        {/* Barra de Filtros y Búsqueda */}
+        <div className="bg-white rounded-2xl border border-[#E2E2E4] p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex bg-[#F3F4F6] p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setFilterMode('ALL')}
+              className={`px-3.5 py-1.5 rounded-lg transition cursor-pointer ${
+                filterMode === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600'
+              }`}
+            >
+              Todos ({records.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('CONVENIO_MENSUAL')}
+              className={`px-3.5 py-1.5 rounded-lg transition cursor-pointer ${
+                filterMode === 'CONVENIO_MENSUAL'
+                  ? 'bg-white text-blue-700 shadow-2xs'
+                  : 'text-slate-600'
+              }`}
+            >
+              Convenios Mensuales
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('PERNOCTA_NOCHE')}
+              className={`px-3.5 py-1.5 rounded-lg transition cursor-pointer ${
+                filterMode === 'PERNOCTA_NOCHE'
+                  ? 'bg-white text-amber-700 shadow-2xs'
+                  : 'text-slate-600'
+              }`}
+            >
+              Pernocta Noche ($5.000)
+            </button>
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por cliente, patente o RUT..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#80093A]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar patente, titular o empresa..."
+              className="w-full h-10 pl-9 pr-3 rounded-xl bg-[#F9F9FB] border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-[#80093A]"
             />
           </div>
-
-          <div className="flex items-center gap-4 text-xs font-mono">
-            <div>
-              <span className="text-slate-400 block text-[10px]">Total Mensual Facturado:</span>
-              <span className="text-emerald-400 font-bold text-sm">$210.000 CLP</span>
-            </div>
-            <div className="border-l border-white/10 pl-4">
-              <span className="text-slate-400 block text-[10px]">Abonados Activos:</span>
-              <span className="text-white font-bold text-sm">{convenios.length} contratos</span>
-            </div>
-          </div>
         </div>
 
-        {/* Tabla de Convenios */}
-        <div className="p-6 rounded-3xl bg-gradient-to-b from-[#111726] to-[#0A0E18] border border-white/10 shadow-2xl space-y-4">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-mono text-xs">
-              <thead>
-                <tr className="text-slate-400 border-b border-white/[0.06] text-[11px] uppercase">
-                  <th className="py-3 px-4">Contrato</th>
-                  <th className="py-3 px-4">Cliente / Razón Social</th>
-                  <th className="py-3 px-4">RUT</th>
-                  <th className="py-3 px-4">Patente</th>
-                  <th className="py-3 px-4">Plaza Asignada</th>
-                  <th className="py-3 px-4">Monto Mes</th>
-                  <th className="py-3 px-4">Estado Pago</th>
-                  <th className="py-3 px-4">Vigencia</th>
+        {/* Tabla Limpia de Convenios y Noche (Mockup #5) */}
+        <div className="bg-white rounded-2xl border border-[#E2E2E4] overflow-hidden shadow-2xs">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-[#F9F9FB] border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                <th className="py-3.5 px-4">Folio</th>
+                <th className="py-3.5 px-4">Patente</th>
+                <th className="py-3.5 px-4">Titular / Empresa</th>
+                <th className="py-3.5 px-4">Modalidad Paralela</th>
+                <th className="py-3.5 px-4">Plaza Bloqueada</th>
+                <th className="py-3.5 px-4">Vigencia / Horario</th>
+                <th className="py-3.5 px-4 text-right">Tarifa Fija</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filtered.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                  <td className="py-3.5 px-4 font-mono font-bold text-slate-500">
+                    {item.id}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-black text-sm text-slate-900 tabular-nums">
+                    {item.patente}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="font-bold text-slate-900 block">{item.titular}</span>
+                    <span className="text-[11px] text-slate-500">{item.empresa}</span>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    {item.modalidad === 'CONVENIO_MENSUAL' ? (
+                      <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[11px] inline-flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
+                        <span>Abonado Mensual</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px] inline-flex items-center gap-1">
+                        <Moon className="w-3 h-3" />
+                        <span>Pernocta Nocturna</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                    {item.plazaBloqueada}
+                  </td>
+                  <td className="py-3.5 px-4 font-mono text-slate-600">{item.vigencia}</td>
+                  <td className="py-3.5 px-4 text-right font-mono font-black text-sm text-[#80093A] tabular-nums">
+                    ${item.tarifaFija.toLocaleString('es-CL')}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {filtered.map((c) => (
-                  <tr key={c.id} className="hover:bg-white/[0.02] transition">
-                    <td className="py-3 px-4 font-bold text-white">{c.id}</td>
-                    <td className="py-3 px-4 font-sans font-semibold text-slate-200">
-                      <div>{c.cliente}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{c.telefono}</div>
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{c.rut}</td>
-                    <td className="py-3 px-4 font-bold text-sky-400">{c.patente}</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-white/[0.06] border border-white/10 font-bold text-white">
-                        {c.slotAsignado || 'Rotativo'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-bold text-emerald-400">
-                      ${c.montoMensual.toLocaleString('es-CL')}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          c.estadoPago === 'AL_DIA'
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                        }`}
-                      >
-                        {c.estadoPago === 'AL_DIA' ? 'Al Día' : 'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{c.vigenciaHasta}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
 
-      {/* Modal Nuevo Convenio */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="bg-[#111726] rounded-3xl border border-white/10 max-w-md w-full p-6 text-white shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-emerald-400" />
-                Registrar Nuevo Convenio Corporativo
+      {/* Pop-up Flotante macOS: Registrar Nuevo Convenio o Pernocta */}
+      {showNewModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowNewModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Registrar Servicio en Paralelo (Convenio / Noche)
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
+              <button
+                type="button"
+                onClick={() => setShowNewModal(false)}
+                className="text-slate-400 hover:text-slate-700"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateConvenio} className="space-y-4">
+            <form onSubmit={handleCreateRecord} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">
-                  Cliente o Razón Social
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Modalidad de Servicio Paralelo
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewModalidad('PERNOCTA_NOCHE')}
+                    className={`py-2.5 rounded-xl text-xs font-bold border cursor-pointer ${
+                      newModalidad === 'PERNOCTA_NOCHE'
+                        ? 'bg-[#80093A] text-white border-[#80093A]'
+                        : 'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    Pernocta Noche ($5.000)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewModalidad('CONVENIO_MENSUAL')}
+                    className={`py-2.5 rounded-xl text-xs font-bold border cursor-pointer ${
+                      newModalidad === 'CONVENIO_MENSUAL'
+                        ? 'bg-[#80093A] text-white border-[#80093A]'
+                        : 'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    Convenio Mensual ($85.000)
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Patente Vehículo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPatente}
+                    onChange={(e) => setNewPatente(e.target.value.toUpperCase())}
+                    placeholder="ABCD-12"
+                    className="w-full h-10 px-3 rounded-xl bg-[#F9F9FB] border border-slate-300 font-mono font-bold text-xs uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Plaza a Bloquear
+                  </label>
+                  <select
+                    value={newPlaza}
+                    onChange={(e) => setNewPlaza(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-[#F9F9FB] border border-slate-300 font-mono font-bold text-xs"
+                  >
+                    <option value="A-09">Plaza A-09 (Sector A)</option>
+                    <option value="A-15">Plaza A-15 (Sector A)</option>
+                    <option value="B-21">Plaza B-21 (Sector B)</option>
+                    <option value="B-28">Plaza B-28 (Sector B)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nombre Titular / Conductor
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Notaría Serrano Ltda."
-                  value={newCliente}
-                  onChange={(e) => setNewCliente(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
+                  value={newTitular}
+                  onChange={(e) => setNewTitular(e.target.value)}
+                  placeholder="Ej: María José Gómez"
+                  className="w-full h-10 px-3 rounded-xl bg-[#F9F9FB] border border-slate-300 text-xs"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">RUT Empresa</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="76.123.456-7"
-                    value={newRut}
-                    onChange={(e) => setNewRut(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Patente Vehículo</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="ABCD-12"
-                    value={newPatente}
-                    onChange={(e) => setNewPatente(e.target.value.toUpperCase())}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs font-mono font-bold text-center text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Plaza Asignada</label>
-                  <input
-                    type="text"
-                    placeholder="A-05"
-                    value={newSlot}
-                    onChange={(e) => setNewSlot(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Monto Mensual (CLP)</label>
-                  <input
-                    type="number"
-                    step={5000}
-                    required
-                    value={newMonto}
-                    onChange={(e) => setNewMonto(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs font-mono font-bold text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  />
-                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Teléfono WhatsApp</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Empresa / Institución Convenio
+                </label>
                 <input
-                  type="tel"
-                  placeholder="+56 9 8765 4321"
-                  value={newTelefono}
-                  onChange={(e) => setNewTelefono(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
+                  type="text"
+                  value={newEmpresa}
+                  onChange={(e) => setNewEmpresa(e.target.value)}
+                  placeholder="Ej: Estudio Jurídico Serrano 447"
+                  className="w-full h-10 px-3 rounded-xl bg-[#F9F9FB] border border-slate-300 text-xs"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 bg-white/[0.05] text-slate-300 text-xs font-bold rounded-xl"
+                  onClick={() => setShowNewModal(false)}
+                  className="flex-1 h-10 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-[#80093A] to-[#A52C55] text-white text-xs font-bold rounded-xl shadow-lg"
+                  className="flex-1 h-10 rounded-xl bg-[#80093A] text-white text-xs font-extrabold cursor-pointer"
                 >
-                  Registrar Convenio
+                  Bloquear Plaza &amp; Guardar
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+
+      {showMockup && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowMockup(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-5xl w-full p-5 shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Lámina Oficial Mockup #5 · Sidebar Colapsable, Convenios, Usuarios y CCTV
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowMockup(false)}
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+              <img
+                src="/mockups/ui_menu_lateral_convenios_usuarios_cctv.jpg"
+                alt="Mockup Oficial Convenios"
+                className="w-full h-auto object-contain max-h-[75vh]"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </MacOSNavigationShell>
   );
 }

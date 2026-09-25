@@ -5,259 +5,341 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Lock,
+  Unlock,
   ArrowRight,
-  Sparkles,
-  MapPin,
-  ChevronDown,
-  ChevronUp,
+  BookOpen,
+  ShieldCheck,
+  Car,
+  LayoutGrid,
+  Eye,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 
-interface FaqItem {
-  pregunta: string;
-  respuesta: string;
-}
-
-const FAQ_DATA: FaqItem[] = [
+const MOCKUP_SHEETS = [
   {
-    pregunta: '¿Ubicación y horario de Serrano 447?',
-    respuesta: 'Serrano 447, a 150m de Plaza Prat. Operamos 24/7 con CCTV.',
+    id: 'm1',
+    title: 'Lámina #1 · Garita POS (40%) + Layout Plazas (60%)',
+    subtitle: 'Operación Keyboard-First F1–F9 sin scroll y matriz Serrano 447',
+    src: '/mockups/ui_garita_pos_y_layout_estacionamiento.jpg',
+    route: '/',
   },
   {
-    pregunta: '¿Cómo funciona la política de 10 min de gracia?',
-    respuesta: 'Si te retiras dentro de 10 minutos, la barrera abre con costo $0 automáticamente.',
+    id: 'm2',
+    title: 'Lámina #2 · Menú Central Launchpad + Panel de Control',
+    subtitle: 'Squircles Burdeos estilo Odoo/macOS, 4 KPIs, Barreras 1–4 y Resumen IA',
+    src: '/mockups/ui_menu_central_launchpad_y_panel_control.jpg',
+    route: '/hub',
   },
   {
-    pregunta: '¿Medios de pago?',
-    respuesta: 'Efectivo con cálculo de vuelto exacto, Débito, Crédito y Transferencias.',
-  },
-];
-
-const GALLERY_IMAGES = [
-  {
-    title: 'Acceso Automatizado LPR',
-    desc: 'Barreras y reconocimiento de patentes',
-    tag: 'Control Central',
-    image: '/login-panel.jpg',
+    id: 'm3',
+    title: 'Lámina #3 · Landing Interno + Login Roles + Manuales SOP',
+    subtitle: 'Portal minimalista con Manuales protegidos por PIN y Flujo SOP 6 Fases',
+    src: '/mockups/ui_landing_login_manuales_soporte.jpg',
+    route: '/documentacion',
   },
   {
-    title: 'Monitoreo CCTV',
-    desc: 'Seguridad 24/7',
-    tag: 'Seguridad',
-    image: '/hub-bg.jpg', // Abstract metallic
+    id: 'm4',
+    title: 'Lámina #4 · Pop-ups macOS + Ticket 80mm + Reportes Z + Config',
+    subtitle: 'Caja Ciega, PIN Verde/Rojo, Ticket Code 128 + QR y Reporte Z SHA-256',
+    src: '/mockups/ui_popups_reportes_configuracion_ticket_pdf.jpg',
+    route: '/reportes',
+  },
+  {
+    id: 'm5',
+    title: 'Lámina #5 · Sidebar Colapsable + Convenios + Usuarios + CCTV LPR',
+    subtitle: 'Servicios paralelos Noche/Convenios, Matriz RBAC y 4 Cámaras LPR en vivo',
+    src: '/mockups/ui_menu_lateral_convenios_usuarios_cctv.jpg',
+    route: '/convenios',
   },
 ];
 
 export default function LandingPage() {
   const router = useRouter();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [manualPin, setManualPin] = useState('');
+  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [previewMockup, setPreviewMockup] = useState<(typeof MOCKUP_SHEETS)[0] | null>(
+    null
+  );
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
+  const handleUnlockManuals = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualPin.length < 4) {
+      setPinError('Ingrese un PIN de personal válido de 4 dígitos (ej. 1234).');
+      return;
+    }
+    setPinError(null);
+    setPinUnlocked(true);
+    setTimeout(() => {
+      router.push('/documentacion');
+    }, 500);
   };
 
   return (
-    <div className="min-h-screen bg-[#06080E] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white relative overflow-hidden">
-      
-      {/* Background Image full viewport with heavy gradient fade */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-80 pointer-events-none"
-        style={{ backgroundImage: "url('/landing-hero.jpg')" }}
-      />
-      {/* Gradient overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#06080E]/40 via-[#06080E]/70 to-[#06080E] pointer-events-none" />
-
-      {/* HEADER macOS FROSTED GLASS */}
-      <header className="sticky top-0 z-50 glass-panel mx-4 mt-4 rounded-3xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/hub"
-              className="w-10 h-10 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/cordano-logo.png" alt="Cordano" className="w-full h-full object-contain p-1" />
-            </Link>
-            <div className="hidden sm:block">
-              <span className="font-extrabold text-sm tracking-widest text-white">PARKOPS CORDANO</span>
+    <div className="min-h-screen bg-[#F9F9FB] text-slate-900 flex flex-col font-sans">
+      {/* ===================================================================== */}
+      {/* 1. BARRA DE VENTANA macOS SONOMA / SEQUOIA                            */}
+      {/* ===================================================================== */}
+      <header className="h-14 bg-white/95 backdrop-blur-md border-b border-[#E2E2E4] px-6 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
+            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
+            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+          </div>
+          <div className="h-4 w-[1px] bg-slate-200" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#80093A] flex items-center justify-center text-white font-black text-sm shadow-xs">
+              C
+            </div>
+            <div>
+              <span className="font-extrabold text-sm tracking-tight text-slate-900 block leading-none">
+                Cordano Inversiones Inmobiliarias Ltda.
+              </span>
+              <span className="text-[11px] text-slate-500 font-medium">
+                Serrano 447, Iquique — Portal Interno de Operaciones
+              </span>
             </div>
           </div>
+        </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-300">
-            <a href="#tarifas" className="hover:text-white transition">Tarifas</a>
-            <a href="#instalaciones" className="hover:text-white transition">Instalaciones</a>
-            <a href="#faq" className="hover:text-white transition">FAQ</a>
-          </nav>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Sistema Online</span>
+          </span>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="macos-btn-primary px-6 py-2.5 rounded-full text-white text-xs font-bold flex items-center gap-2"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Iniciar Sesión</span>
-            </Link>
-          </div>
+          <Link
+            href="/login"
+            className="px-4 py-2 rounded-xl bg-[#80093A] hover:bg-[#68072f] text-white text-xs font-extrabold transition shadow-xs"
+          >
+            Iniciar Sesión
+          </Link>
         </div>
       </header>
 
-      {/* HERO SECTION INMERSIVO */}
-      <section className="relative z-10 pt-32 pb-20 text-center px-4 max-w-5xl mx-auto space-y-8 flex-1 flex flex-col justify-center">
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full glass-panel text-xs font-bold text-emerald-300 mx-auto spring-anim hover:scale-105">
-          <Sparkles className="w-4 h-4" />
-          <span>Infraestructura Inteligente • Cordano Inversiones</span>
-        </div>
-
-        <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter text-white leading-[1.05] text-glow">
-          Estacionamiento <br />
-          <span className="bg-gradient-to-r from-emerald-300 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
-            Serrano 447
-          </span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
-          30 plazas físicas monitoreadas, tarifas fraccionadas por minuto y máxima seguridad en el centro de Iquique.
-        </p>
-
-        {/* Botones Grandes Táctiles */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-6">
-          <Link
-            href="/login"
-            className="macos-btn-primary h-16 px-10 rounded-full text-white font-extrabold text-sm flex items-center gap-3"
-          >
-            <span>INGRESAR AL ERP</span>
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <a
-            href="#tarifas"
-            className="macos-btn h-16 px-10 rounded-full text-white font-bold text-sm flex items-center gap-2"
-          >
-            <span>VER TARIFAS</span>
-          </a>
-        </div>
-      </section>
-
-      {/* TARIFAS (Glass Cards) */}
-      <section id="tarifas" className="relative z-10 py-20 px-4 max-w-6xl mx-auto w-full space-y-12">
-        <div className="text-center space-y-3">
-          <h2 className="text-4xl font-black text-white tracking-tight">Tarifas Oficiales</h2>
-          <p className="text-sm text-slate-400 font-mono">Sin redondeos abusivos.</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { tipo: 'Automóvil', precio: '$25', unidad: '/ min', desc: '$1.500 CLP por hora.' },
-            { tipo: 'SUV / Camioneta', precio: '$30', unidad: '/ min', desc: '$1.800 CLP por hora.' },
-            { tipo: 'Pernocta Nocturna', precio: '$8.000', unidad: '/ noche', desc: 'De 21:00 a 08:00 hrs.' },
-            { tipo: 'Convenio Mensual', precio: '$75.000', unidad: '/ mes', desc: 'Plaza reservada 24/7.' }
-          ].map((t, i) => (
-            <div key={i} className="glass-panel p-8 rounded-3xl flex flex-col items-center text-center spring-anim hover:-translate-y-2">
-              <span className="text-xs font-bold uppercase text-slate-400 font-mono mb-4">{t.tipo}</span>
-              <div className="text-4xl font-black text-white font-mono mb-2">{t.precio} <span className="text-sm font-sans text-slate-400">{t.unidad}</span></div>
-              <p className="text-xs text-slate-400 font-medium">{t.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* INSTALACIONES & ARQUITECTURA SERRANO 447 (Magnific AI Renders) */}
-      <section id="instalaciones" className="relative z-10 py-20 px-4 max-w-6xl mx-auto w-full space-y-12">
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-xs font-bold text-cyan-300">
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Infraestructura Física • Serrano 447, Iquique</span>
+      {/* ===================================================================== */}
+      {/* 2. PORTAL INTERNO MINIMALISTA (Mockup #3 · Sección 1 del Catálogo)    */}
+      {/* ===================================================================== */}
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-10 space-y-8">
+        {/* Tarjeta Principal de Acceso Operativo */}
+        <section className="bg-white rounded-3xl border border-[#E2E2E4] shadow-[0_12px_32px_-8px_rgba(0,0,0,0.06)] p-8 sm:p-10 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#80093A]/10 text-[#80093A] text-xs font-extrabold">
+            <ShieldCheck className="w-4 h-4" />
+            <span>Estética Canónica V2.0 · macOS Sonoma Enterprise</span>
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tight">Instalaciones de Primer Nivel</h2>
-          <p className="text-sm text-slate-400 font-mono max-w-xl mx-auto">
-            Seguridad automatizada, circuito cerrado y accesos vehiculares de alta velocidad.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              title: 'Acceso Automatizado LPR',
-              desc: 'Barreras italianas de alta frecuencia y lectura óptica OCR de matrículas en milisegundos.',
-              tag: 'Barreras & LPR',
-              image: '/login-panel.jpg',
-            },
-            {
-              title: 'Matriz Espacial 30 Plazas',
-              desc: 'Layout de 700 m² con pasillo de maniobra unidireccional, bahías techadas y plazas PMR.',
-              tag: 'Serrano 447',
-              image: '/serrano_render.jpg',
-            },
-            {
-              title: 'Vigilancia & Garita Central',
-              desc: 'Monitoreo ininterrumpido 24/7 con CCTV de alta definición y respaldo energético offline.',
-              tag: 'Seguridad 24/7',
-              image: '/landing-hero.jpg',
-            },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="group glass-panel rounded-3xl overflow-hidden flex flex-col justify-between spring-anim hover:-translate-y-2 hover:border-cyan-500/40"
+          <div className="space-y-2 max-w-2xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+              ParkOps PMS &amp; ERP — Serrano 447, Iquique
+            </h1>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Plataforma de control de estacionamiento (30 plazas + fila central de sobrecupo), emisión térmica dual de 80mm (Code 128 + QR), arqueo de caja ciega y auditoría antifraude por PIN.
+            </p>
+          </div>
+
+          {/* Botones de Acción Primaria */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link
+              href="/login"
+              className="h-13 px-7 rounded-2xl bg-[#80093A] hover:bg-[#68072f] text-white font-extrabold text-sm inline-flex items-center gap-2.5 shadow-md transition active:scale-[0.99]"
             >
-              <div className="h-56 relative overflow-hidden bg-black/50">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#06080E] via-transparent to-transparent" />
-                <span className="absolute top-4 left-4 text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-black/70 border border-white/20 text-cyan-300 backdrop-blur-md">
-                  {item.tag}
-                </span>
+              <span>Ingresar al Sistema (Login)</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              href="/"
+              className="h-13 px-6 rounded-2xl bg-[#F3F4F6] hover:bg-slate-200 text-slate-900 border border-slate-300 font-extrabold text-sm inline-flex items-center gap-2 transition"
+            >
+              <Car className="w-4 h-4 text-[#80093A]" />
+              <span>Ir a Garita POS (40/60)</span>
+            </Link>
+
+            <Link
+              href="/hub"
+              className="h-13 px-6 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm inline-flex items-center gap-2 transition"
+            >
+              <LayoutGrid className="w-4 h-4 text-[#80093A]" />
+              <span>Menú Central Launchpad</span>
+            </Link>
+          </div>
+
+          {/* Sub-Tarjeta de Manuales y Soporte Operativo Protegida por PIN (Mockup #3) */}
+          <div className="max-w-xl mx-auto mt-6 p-6 rounded-2xl bg-[#F9F9FB] border border-slate-200/90 text-left space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#80093A]/10 text-[#80093A] flex items-center justify-center shrink-0">
+                  {pinUnlocked ? (
+                    <Unlock className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <Lock className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-sm font-extrabold text-slate-900">
+                    Manuales y Soporte Operativo (Protegido por PIN)
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Acceso directo a procedimientos de garita, flujo SOP de 6 fases y contingencia offline (-O)
+                  </p>
+                </div>
               </div>
-              <div className="p-6 space-y-2">
-                <h3 className="text-lg font-black text-white group-hover:text-cyan-300 transition-colors">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
+              <BookOpen className="w-5 h-5 text-slate-400 shrink-0" />
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* FAQ ACORDEÓN METALIZADO */}
-      <section id="faq" className="relative z-10 py-20 px-4 max-w-3xl mx-auto w-full space-y-10">
-        <div className="text-center">
-          <h2 className="text-3xl font-black text-white">Preguntas Frecuentes</h2>
-        </div>
+            {pinError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium">
+                {pinError}
+              </div>
+            )}
 
-        <div className="space-y-4">
-          {FAQ_DATA.map((item, idx) => {
-            const isOpen = openFaq === idx;
-            return (
-              <div key={idx} className="glass-panel rounded-3xl overflow-hidden transition-all duration-300">
+            {pinUnlocked && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>PIN Verificado. Abriendo Manuales y Flujo SOP...</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleUnlockManuals}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
+            >
+              <input
+                type="password"
+                maxLength={4}
+                value={manualPin}
+                onChange={(e) => setManualPin(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="PIN Personal (ej: 1234)"
+                className="flex-1 h-11 px-4 rounded-xl bg-white border border-slate-300 font-mono font-bold text-sm tracking-widest text-slate-900 focus:outline-none focus:border-[#80093A] tabular-nums"
+              />
+              <button
+                type="submit"
+                className="h-11 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition cursor-pointer shrink-0"
+              >
+                Desbloquear Manuales
+              </button>
+            </form>
+          </div>
+        </section>
+
+        {/* ===================================================================== */}
+        {/* 3. CATÁLOGO VISUAL DE LAS 5 LÁMINAS MOCKUP CANÓNICAS V2.0             */}
+        {/* ===================================================================== */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Catálogo Oficial de Estructuras &amp; Mockups V2.0 (PRD Consolidado)
+              </h2>
+              <p className="text-xs text-slate-500">
+                Haz clic en cualquier lámina para inspeccionar el diseño de alta resolución o abrir la vista interactiva
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {MOCKUP_SHEETS.map((sheet) => (
+              <div
+                key={sheet.id}
+                className="bg-white rounded-2xl border border-[#E2E2E4] overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between"
+              >
+                <div>
+                  <div
+                    onClick={() => setPreviewMockup(sheet)}
+                    className="relative h-44 bg-slate-100 overflow-hidden cursor-pointer group border-b border-slate-100"
+                  >
+                    <img
+                      src={sheet.src}
+                      alt={sheet.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-xl bg-white text-slate-900 text-xs font-extrabold shadow-md flex items-center gap-1.5 transition">
+                        <Eye className="w-3.5 h-3.5 text-[#80093A]" />
+                        <span>Ampliar Lámina</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-xs font-extrabold text-slate-900">
+                      {sheet.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1">{sheet.subtitle}</p>
+                  </div>
+                </div>
+
+                <div className="px-4 pb-4 pt-1 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewMockup(sheet)}
+                    className="text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  >
+                    Ver Mockup
+                  </button>
+                  <Link
+                    href={sheet.route}
+                    className="text-xs font-extrabold text-[#80093A] hover:underline flex items-center gap-1"
+                  >
+                    <span>Abrir Módulo</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Pie corporativo */}
+      <footer className="py-5 border-t border-[#E2E2E4] bg-white text-center text-xs text-slate-500">
+        © 2026 Cordano Inversiones Inmobiliarias Ltda. • Uso Interno Exclusivo • Serrano 447, Iquique
+      </footer>
+
+      {/* Modal de Vista Previa de Lámina Mockup */}
+      {previewMockup && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setPreviewMockup(null)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-5xl w-full p-5 shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  {previewMockup.title}
+                </h3>
+                <p className="text-xs text-slate-500">{previewMockup.subtitle}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={previewMockup.route}
+                  className="px-3 py-1.5 rounded-xl bg-[#80093A] text-white text-xs font-bold"
+                >
+                  Ir a Vista En Vivo →
+                </Link>
                 <button
                   type="button"
-                  onClick={() => toggleFaq(idx)}
-                  className="w-full p-6 text-left flex items-center justify-between font-bold text-white hover:text-cyan-300 transition"
+                  onClick={() => setPreviewMockup(null)}
+                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
                 >
-                  <span className="text-sm md:text-base">{item.pregunta}</span>
-                  {isOpen ? <ChevronUp className="w-5 h-5 text-cyan-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-slate-400 shrink-0" />}
+                  <X className="w-4 h-4" />
                 </button>
-                {isOpen && (
-                  <div className="px-6 pb-6 pt-0 text-sm text-slate-300 leading-relaxed">
-                    {item.respuesta}
-                  </div>
-                )}
               </div>
-            );
-          })}
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+              <img
+                src={previewMockup.src}
+                alt={previewMockup.title}
+                className="w-full h-auto object-contain max-h-[75vh]"
+              />
+            </div>
+          </div>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="relative z-10 py-10 border-t border-white/[0.05] text-center text-xs text-slate-500 font-mono">
-        Serrano 447, Iquique, Región de Tarapacá, Chile <br />
-        Cordano Inversiones Inmobiliarias Ltda.
-      </footer>
+      )}
     </div>
   );
 }

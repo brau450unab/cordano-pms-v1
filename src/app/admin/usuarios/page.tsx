@@ -1,296 +1,192 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { MacOSNavigationShell } from '@/components/MacOSNavigationShell';
 import {
-  ArrowLeft,
   Users,
   ShieldCheck,
   KeyRound,
-  UserPlus,
   Lock,
   CheckCircle2,
+  Eye,
   X,
-  Grid,
-  Shield,
-  Clock,
-  Sparkles
+  Plus
 } from 'lucide-react';
 
-interface ERPUser {
+interface StaffUser {
   id: string;
   nombre: string;
-  email: string;
-  rol: 'OPERADOR' | 'ADMIN' | 'SUPERVISOR';
-  pin: string;
-  estado: 'ACTIVO' | 'SUSPENDIDO';
-  ultimoAcceso: string;
+  rol: 'OPERADOR_GARITA' | 'SUPERVISOR' | 'ADMINISTRADOR';
+  pinMasked: string;
+  accesoCajaCiega: boolean;
+  permisos: string;
+  estado: 'ACTIVO' | 'EN_TURNO';
 }
 
-const INITIAL_USERS: ERPUser[] = [
+const INITIAL_USERS: StaffUser[] = [
   {
-    id: 'USR-01',
-    nombre: 'Carlos Morales',
-    email: 'carlos.operador@cordano.cl',
-    rol: 'OPERADOR',
-    pin: '1234',
-    estado: 'ACTIVO',
-    ultimoAcceso: '2026-09-24 14:30',
+    id: 'OP-01',
+    nombre: 'Ana R. (Garita Mañana)',
+    rol: 'OPERADOR_GARITA',
+    pinMasked: '•••• (4821)',
+    accesoCajaCiega: true,
+    permisos: 'Check-in, Cobro, Arqueo Ciego, Descuento menor con PIN + Justificación >10 car.',
+    estado: 'EN_TURNO',
   },
   {
-    id: 'USR-02',
-    nombre: 'Braulio Administrador',
-    email: 'braulio.admin@cordano.cl',
-    rol: 'ADMIN',
-    pin: '9999',
+    id: 'OP-02',
+    nombre: 'Carlos M. (Garita Tarde)',
+    rol: 'OPERADOR_GARITA',
+    pinMasked: '•••• (7390)',
+    accesoCajaCiega: true,
+    permisos: 'Check-in, Cobro, Arqueo Ciego, Descuento menor con PIN + Justificación >10 car.',
     estado: 'ACTIVO',
-    ultimoAcceso: '2026-09-24 16:15',
   },
   {
-    id: 'USR-03',
-    nombre: 'Javier Supervisor',
-    email: 'javier.supervisor@cordano.cl',
+    id: 'SUP-01',
+    nombre: 'Roberto V. (Supervisor Recinto)',
     rol: 'SUPERVISOR',
-    pin: '5555',
+    pinMasked: '•••• (9104)',
+    accesoCajaCiega: true,
+    permisos: 'Visado de Ticket Perdido ($8.000), Anulaciones, Apertura de Sobrecupo SC-01..05',
     estado: 'ACTIVO',
-    ultimoAcceso: '2026-09-23 21:00',
+  },
+  {
+    id: 'ADM-01',
+    nombre: 'Gerencia Cordano Inversiones',
+    rol: 'ADMINISTRADOR',
+    pinMasked: '•••• (0001)',
+    accesoCajaCiega: false,
+    permisos: 'Auditoría Reporte Z SHA-256, Motor de Tarifas, RBAC (Bloqueado para abrir caja)',
+    estado: 'ACTIVO',
   },
 ];
 
 export default function UsuariosPage() {
-  const [users, setUsers] = useState<ERPUser[]>(INITIAL_USERS);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newNombre, setNewNombre] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newRol, setNewRol] = useState<'OPERADOR' | 'ADMIN' | 'SUPERVISOR'>('OPERADOR');
-  const [newPin, setNewPin] = useState('');
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPin.length !== 4) {
-      alert('El PIN debe tener 4 dígitos');
-      return;
-    }
-
-    const newUser: ERPUser = {
-      id: `USR-0${users.length + 1}`,
-      nombre: newNombre,
-      email: newEmail,
-      rol: newRol,
-      pin: newPin,
-      estado: 'ACTIVO',
-      ultimoAcceso: 'Pendiente primer login',
-    };
-
-    setUsers([...users, newUser]);
-    setSuccessMsg(`Usuario ${newNombre} dado de alta con PIN ${newPin}.`);
-    setShowAddModal(false);
-    setNewNombre('');
-    setNewEmail('');
-    setNewPin('');
-    setTimeout(() => setSuccessMsg(null), 4000);
-  };
+  const [users] = useState<StaffUser[]>(INITIAL_USERS);
+  const [showMockup, setShowMockup] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white">
-      {/* Header macOS Metalizado */}
-      <header className="sticky top-0 z-40 backdrop-blur-2xl bg-[#090D17]/85 border-b border-white/[0.08] shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/hub"
-              title="Volver al Launchpad"
-              className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-white block">
-                GESTIÓN DE USUARIOS & PERMISOS ERP
-              </span>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Cordano Inversiones Inmobiliarias Ltda. • Serrano 447, Iquique
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#80093A] to-[#A52C55] hover:opacity-95 text-white font-bold transition flex items-center gap-2 border border-white/20 shadow-lg shadow-[#80093A]/40 active:scale-95"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Nuevo Usuario ERP</span>
-            </button>
-            <Link
-              href="/hub"
-              className="p-2.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 hover:text-white transition"
-              title="Launchpad"
-            >
-              <Grid className="w-4 h-4" />
-            </Link>
+    <MacOSNavigationShell
+      title="Usuarios, Roles RBAC & PINs Antifraude"
+      subtitle="Sección 13.2 del Catálogo · Segregación de Roles e Incompatibilidad de Caja para Administradores"
+      roleLabel="Seguridad RBAC"
+      rightActions={
+        <button
+          type="button"
+          onClick={() => setShowMockup(true)}
+          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+        >
+          <Eye className="w-3.5 h-3.5 text-[#80093A]" />
+          <span>Mockup #5</span>
+        </button>
+      }
+    >
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Aviso Regla 7 AGENTS.md */}
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-950">
+          <Lock className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+          <div>
+            <strong className="block">
+              Regla 7 (Incompatibilidad de Caja para Administradores):
+            </strong>
+            El rol de <strong>Administrador</strong> audita cierres de caja ciega, firma autorizaciones por ticket extraviado (en Rojo) y configura tarifas, pero tiene <strong>bloqueada la apertura directa de turnos de caja</strong> para garantizar trazabilidad antifraude.
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 flex-1">
-        {successMsg && (
-          <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs rounded-2xl flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        <div className="p-6 rounded-3xl bg-gradient-to-b from-[#111726] to-[#0A0E18] border border-white/10 shadow-2xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-sky-400" />
-                <span>Usuarios con Acceso a Garita y Sistema ERP</span>
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Segregación de roles: Administradores auditan; Operadores abren y cierran turnos.
-              </p>
-            </div>
-            <span className="text-xs font-mono font-bold px-3 py-1 bg-white/[0.05] border border-white/10 rounded-xl text-slate-300">
-              {users.length} Cuentas Activas
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-mono text-xs">
-              <thead>
-                <tr className="text-slate-400 border-b border-white/[0.06] text-[11px] uppercase">
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Nombre</th>
-                  <th className="py-3 px-4">Correo</th>
-                  <th className="py-3 px-4">Rol Asignado</th>
-                  <th className="py-3 px-4">PIN Autorizador</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4">Último Acceso</th>
+        {/* Tabla de Usuarios y PINs (Mockup #5) */}
+        <div className="bg-white rounded-3xl border border-[#E2E2E4] overflow-hidden shadow-2xs">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-[#F9F9FB] border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                <th className="py-3.5 px-4">ID</th>
+                <th className="py-3.5 px-4">Funcionario</th>
+                <th className="py-3.5 px-4">Rol RBAC</th>
+                <th className="py-3.5 px-4">PIN Individual</th>
+                <th className="py-3.5 px-4">Apertura de Caja Ciega</th>
+                <th className="py-3.5 px-4">Alcance y Atribuciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.map((u) => (
+                <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                  <td className="py-4 px-4 font-mono font-bold text-slate-500">
+                    {u.id}
+                  </td>
+                  <td className="py-4 px-4 font-extrabold text-slate-900">
+                    {u.nombre}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span
+                      className={`px-2.5 py-1 rounded-full font-mono text-[10px] font-extrabold ${
+                        u.rol === 'ADMINISTRADOR'
+                          ? 'bg-[#80093A]/10 text-[#80093A] border border-[#80093A]/30'
+                          : u.rol === 'SUPERVISOR'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}
+                    >
+                      {u.rol}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 font-mono font-bold text-slate-700 tabular-nums">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 border border-slate-200">
+                      <KeyRound className="w-3 h-3 text-[#80093A]" />
+                      {u.pinMasked}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    {u.accesoCajaCiega ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px]">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Habilitado (Caja Ciega)</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]">
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Incompatibilidad de Caja</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-slate-600">{u.permisos}</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-white/[0.02] transition">
-                    <td className="py-3 px-4 font-bold text-white">{u.id}</td>
-                    <td className="py-3 px-4 font-sans font-semibold text-slate-200">{u.nombre}</td>
-                    <td className="py-3 px-4 text-slate-400">{u.email}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                          u.rol === 'ADMIN'
-                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-                            : u.rol === 'SUPERVISOR'
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                            : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
-                        }`}
-                      >
-                        {u.rol}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-bold text-[#ffb1c2]">•••• (PIN activo)</td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
-                        {u.estado}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">{u.ultimoAcceso}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
 
-      {/* Modal Nuevo Usuario */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
-          <div className="bg-[#111726] rounded-3xl border border-white/10 max-w-md w-full p-6 text-white shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-emerald-400" />
-                Alta de Usuario ERP
+      {showMockup && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowMockup(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-5xl w-full p-5 shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Lámina Oficial Mockup #5 · Usuarios RBAC, Convenios y Cámaras LPR
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
+              <button
+                type="button"
+                onClick={() => setShowMockup(false)}
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Nombre Completo</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Marcelo Rojas"
-                  value={newNombre}
-                  onChange={(e) => setNewNombre(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Correo Electrónico</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="marcelo@cordano.cl"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Rol ERP</label>
-                  <select
-                    value={newRol}
-                    onChange={(e: any) => setNewRol(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F1A] border border-white/10 text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  >
-                    <option value="OPERADOR">Operador Garita</option>
-                    <option value="SUPERVISOR">Supervisor</option>
-                    <option value="ADMIN">Administrador</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-300 mb-1">PIN (4 Dígitos)</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    required
-                    placeholder="••••"
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-xs font-mono font-bold text-center text-white focus:outline-none focus:ring-2 focus:ring-[#80093A]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 bg-white/[0.05] text-slate-300 text-xs font-bold rounded-xl"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-[#80093A] to-[#A52C55] text-white text-xs font-bold rounded-xl shadow-lg"
-                >
-                  Crear Usuario
-                </button>
-              </div>
-            </form>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+              <img
+                src="/mockups/ui_menu_lateral_convenios_usuarios_cctv.jpg"
+                alt="Mockup Oficial Usuarios"
+                className="w-full h-auto object-contain max-h-[75vh]"
+              />
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </MacOSNavigationShell>
   );
 }

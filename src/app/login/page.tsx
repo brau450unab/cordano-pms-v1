@@ -5,197 +5,260 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Lock,
-  User,
-  ShieldCheck,
   ArrowRight,
-  Car,
-  ChevronRight,
+  ShieldCheck,
+  AlertTriangle,
+  UserCheck,
+  ArrowLeft,
+  Eye,
+  X
 } from 'lucide-react';
+
+type RoleOption = 'operador' | 'supervisor' | 'admin';
+
+const OPERATORS_BY_ROLE: Record<RoleOption, { id: string; name: string; shift: string }[]> = {
+  operador: [
+    { id: 'OP-01', name: 'Ana R. — Operadora Turno Mañana', shift: 'Morning (08:00 - 16:00)' },
+    { id: 'OP-02', name: 'Carlos M. — Operador Turno Tarde', shift: 'Evening (16:00 - 00:00)' },
+  ],
+  supervisor: [
+    { id: 'SUP-01', name: 'Roberto V. — Supervisor de Recinto', shift: 'All Shifts' },
+  ],
+  admin: [
+    { id: 'ADM-01', name: 'Gerencia — Cordano Inversiones Ltda.', shift: 'Auditoría ERP (Sin Caja)' },
+  ],
+};
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleOption>('operador');
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('OP-01');
+  const [pin, setPin] = useState('1234');
+  const [initialCash, setInitialCash] = useState<number>(50000);
+  const [showMockup, setShowMockup] = useState(false);
 
-  const [showRoleSelector, setShowRoleSelector] = useState(false);
-
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    setTimeout(() => {
-      setLoading(false);
-      if (email.includes('admin') || email.includes('cordano')) {
-        setShowRoleSelector(true);
-      } else {
-        router.push('/hub');
-      }
-    }, 500);
+  const handleRoleSelect = (role: RoleOption) => {
+    setSelectedRole(role);
+    setSelectedProfileId(OPERATORS_BY_ROLE[role][0].id);
   };
 
-  const handleSelectRole = (role: 'operador' | 'admin') => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('parkops_active_role', role);
+      sessionStorage.setItem('parkops_active_role', selectedRole);
     }
-    router.push('/hub');
+    if (selectedRole === 'operador') {
+      router.push('/');
+    } else {
+      router.push('/hub');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#06080E] text-white flex font-sans selection:bg-[#80093A] selection:text-white">
-      
-      {/* 1. LEFT PANEL: MAGNIFIC AI RENDER */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000"
-          style={{ backgroundImage: "url('/login-panel.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#06080E]/40 to-[#06080E]" />
-        
-        {/* Minimal branding overlay */}
-        <div className="absolute bottom-12 left-12 glass-panel p-6 rounded-3xl max-w-sm">
-          <h2 className="text-2xl font-black text-white leading-tight">ParkOps Control</h2>
-          <p className="text-sm text-slate-300 mt-2 font-medium">Acceso seguro a infraestructura de Serrano 447.</p>
+    <div className="min-h-screen bg-[#F9F9FB] text-slate-900 flex flex-col font-sans">
+      {/* Barra superior macOS Sonoma */}
+      <header className="h-14 bg-white/95 backdrop-blur-md border-b border-[#E2E2E4] px-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
+            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
+            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+          </div>
+          <div className="h-4 w-[1px] bg-slate-200" />
+          <Link
+            href="/landing"
+            className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 transition"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Volver al Portal Interno</span>
+          </Link>
         </div>
-      </div>
 
-      {/* 2. RIGHT PANEL: LOGIN FORM */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 relative z-10">
-        <div className="max-w-md w-full space-y-10">
-          
+        <button
+          type="button"
+          onClick={() => setShowMockup(true)}
+          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+        >
+          <Eye className="w-3.5 h-3.5 text-[#80093A]" />
+          <span>Mockup #3</span>
+        </button>
+      </header>
+
+      {/* Contenedor Central de Login Corporativo (Mockup #3 · Sección 3 del Catálogo) */}
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-[460px] bg-white rounded-3xl border border-[#E2E2E4] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] p-7 sm:p-8 space-y-6">
+          {/* Identidad Corporativa */}
           <div className="text-center space-y-2">
-            <h2 className="text-4xl font-black text-white tracking-tight">Bienvenido</h2>
-            <p className="text-sm text-slate-400">Ingresa tus credenciales para acceder al ERP.</p>
+            <div className="w-12 h-12 rounded-2xl bg-[#80093A] text-white font-black text-xl flex items-center justify-center mx-auto shadow-md">
+              C
+            </div>
+            <h1 className="text-xl font-extrabold tracking-tight text-slate-900">
+              Acceso al Sistema — ParkOps PMS
+            </h1>
+            <p className="text-xs text-slate-500">
+              Cordano Inversiones Inmobiliarias Ltda. • Serrano 447, Iquique
+            </p>
           </div>
 
-          {/* Quick Demo Logins */}
-          <div className="flex gap-3 justify-center">
-            <button
-              type="button"
-              onClick={() => { setEmail('carlos.operador@cordano.cl'); setPassword('carlos1234'); }}
-              className="macos-btn px-4 py-2 rounded-full text-xs font-bold text-slate-300"
-            >
-              Demo Operador
-            </button>
-            <button
-              type="button"
-              onClick={() => { setEmail('braulio.admin@cordano.cl'); setPassword('admin1234'); }}
-              className="macos-btn px-4 py-2 rounded-full text-xs font-bold text-slate-300"
-            >
-              Demo Admin
-            </button>
+          {/* 1. Selector de Rol (Segmented Control estilo macOS) */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Seleccione su Rol Operativo
+            </label>
+            <div className="grid grid-cols-3 gap-1 bg-[#F3F4F6] p-1 rounded-xl border border-slate-200 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('operador')}
+                className={`py-2 rounded-lg transition cursor-pointer ${
+                  selectedRole === 'operador'
+                    ? 'bg-[#80093A] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Operador Garita
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('supervisor')}
+                className={`py-2 rounded-lg transition cursor-pointer ${
+                  selectedRole === 'supervisor'
+                    ? 'bg-[#80093A] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Supervisor
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleSelect('admin')}
+                className={`py-2 rounded-lg transition cursor-pointer ${
+                  selectedRole === 'admin'
+                    ? 'bg-[#80093A] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Administrador
+              </button>
+            </div>
           </div>
 
-          <form onSubmit={handleCredentialsSubmit} className="space-y-6">
-            <div className="space-y-4">
+          {/* Aviso Regla 7 AGENTS.md: Segregación de Roles e Incompatibilidad de Caja */}
+          {selectedRole === 'admin' ? (
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
               <div>
-                <div className="relative">
-                  <User className="w-5 h-5 text-slate-400 absolute left-5 top-4" />
-                  <input
-                    type="text"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="usuario@cordano.cl"
-                    className="w-full pl-14 pr-6 py-4 rounded-3xl glass-panel text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#80093A] transition-all"
-                  />
-                </div>
+                <strong className="block">Incompatibilidad de Caja (Regla 7):</strong>
+                El rol Administrador audita y configura, pero <strong>no abre turnos de caja</strong> directamente para salvaguardar la trazabilidad del arqueo ciego.
               </div>
+            </div>
+          ) : (
+            <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+              <span className="font-semibold flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Habilitado para Turno de Caja Ciega</span>
+              </span>
+              <span className="font-mono font-bold tabular-nums">
+                Base: ${initialCash.toLocaleString('es-CL')}
+              </span>
+            </div>
+          )}
 
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            {/* Selector de Usuario / Operador */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Usuario / Operador Asignado
+              </label>
+              <select
+                value={selectedProfileId}
+                onChange={(e) => setSelectedProfileId(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl bg-[#F9F9FB] border border-slate-300 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#80093A]"
+              >
+                {OPERATORS_BY_ROLE[selectedRole].map((op) => (
+                  <option key={op.id} value={op.id}>
+                    [{op.id}] {op.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Declaración de Fondo Inicial de Sencillo (Sólo Operador) */}
+            {selectedRole === 'operador' && (
               <div>
-                <div className="relative">
-                  <Lock className="w-5 h-5 text-slate-400 absolute left-5 top-4" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Contraseña"
-                    className="w-full pl-14 pr-6 py-4 rounded-3xl glass-panel text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#80093A] transition-all"
-                  />
-                </div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                  Fondo Inicial de Sencillo Declarado (CLP)
+                </label>
+                <input
+                  type="number"
+                  step={5000}
+                  value={initialCash}
+                  onChange={(e) => setInitialCash(Number(e.target.value || 0))}
+                  className="w-full h-11 px-3.5 rounded-xl bg-[#F9F9FB] border border-slate-300 font-mono font-bold text-sm text-slate-900 tabular-nums focus:outline-none focus:border-[#80093A]"
+                />
+              </div>
+            )}
+
+            {/* PIN Personal de 4 dígitos */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Contraseña / PIN de Seguridad (4 dígitos)
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  maxLength={6}
+                  required
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 text-center font-mono font-black text-2xl tracking-[0.5em] rounded-xl bg-[#F9F9FB] border border-slate-300 text-slate-900 focus:outline-none focus:border-[#80093A] tabular-nums"
+                />
               </div>
             </div>
 
+            {/* Botón Principal Burdeos (#80093A) */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full h-16 rounded-3xl font-bold text-sm text-white macos-btn-primary flex items-center justify-center gap-3"
+              className="w-full h-12 rounded-xl bg-[#80093A] hover:bg-[#68072f] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer active:scale-[0.99]"
             >
-              {loading ? 'Validando...' : (
-                <>
-                  <span>INICIAR SESIÓN</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
+              <span>
+                {selectedRole === 'operador'
+                  ? 'Iniciar Sesión y Abrir Turno en Garita POS'
+                  : 'Ingresar al Menú Central Launchpad'}
+              </span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          <div className="text-center pt-6">
-            <Link href="/landing" className="text-sm font-bold text-slate-400 hover:text-white transition">
-              &larr; Volver
-            </Link>
-          </div>
         </div>
-      </div>
+      </main>
 
-      {/* 3. ROLE SELECTOR MODAL */}
-      {showRoleSelector && (
-        <div className="fixed inset-0 z-50 bg-[#06080E]/90 backdrop-blur-2xl flex items-center justify-center p-4 spring-anim">
-          <div className="glass-panel rounded-[2rem] max-w-md w-full p-8 space-y-6 border border-white/20">
-            <div className="text-center space-y-2 pb-4 border-b border-white/10">
-              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-[0_0_30px_rgba(6,182,212,0.4)] mb-4">
-                <ShieldCheck className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-black text-white">Selecciona tu Rol</h3>
-            </div>
-
-            <div className="space-y-4">
+      {showMockup && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowMockup(false)}
+        >
+          <div
+            className="bg-white rounded-3xl border border-slate-200 max-w-5xl w-full p-5 shadow-2xl space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-sm font-extrabold text-slate-900">
+                Lámina Oficial Mockup #3 · Landing Interno, Login por Roles y Manuales SOP
+              </h3>
               <button
                 type="button"
-                onClick={() => handleSelectRole('operador')}
-                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group min-h-[56px]"
+                onClick={() => setShowMockup(false)}
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center">
-                    <Car className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-base text-white block group-hover:text-cyan-300 transition">Operador Garita</span>
-                    <span className="text-xs text-slate-400">Control POS y barreras</span>
-                  </div>
-                </div>
-                <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-white transition-transform group-hover:translate-x-1" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSelectRole('admin')}
-                className="w-full p-5 rounded-3xl macos-btn flex items-center justify-between text-left group min-h-[56px]"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-base text-white block group-hover:text-emerald-300 transition">Administrador</span>
-                    <span className="text-xs text-slate-400">Auditoría y finanzas</span>
-                  </div>
-                </div>
-                <ChevronRight className="w-6 h-6 text-slate-400 group-hover:text-white transition-transform group-hover:translate-x-1" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-
-            <div className="text-center pt-2">
-              <button
-                type="button"
-                onClick={() => setShowRoleSelector(false)}
-                className="text-xs font-bold text-slate-400 hover:text-white transition py-2 px-4 rounded-xl macos-btn"
-              >
-                Cancelar y cambiar credenciales
-              </button>
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+              <img
+                src="/mockups/ui_landing_login_manuales_soporte.jpg"
+                alt="Mockup Oficial Login"
+                className="w-full h-auto object-contain max-h-[75vh]"
+              />
             </div>
           </div>
         </div>

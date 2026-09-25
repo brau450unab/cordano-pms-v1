@@ -2,37 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { MacOSNavigationShell } from '@/components/MacOSNavigationShell';
+import { ParkingSlot, Shift, AuditLog } from '@/types';
 import {
-  ParkingSlot,
-  Shift,
-  AuditLog,
-  PaymentMethod,
-  IncidenceType,
-} from '@/types';
-import {
-  LayoutGrid,
-  Car,
-  Clock,
   ShieldCheck,
-  FileSpreadsheet,
-  Settings,
-  Video,
-  BookOpen,
-  DollarSign,
+  Download,
   AlertTriangle,
   CheckCircle2,
   KeyRound,
-  Download,
-  ArrowRight,
-  ChevronDown,
-  RefreshCw,
-  X,
-  Check,
-  TrendingUp,
-  CreditCard,
-  UserCheck,
   Lock,
-  Layers
+  Unlock,
+  Sparkles,
+  X,
+  Eye,
+  Clock,
+  DollarSign,
+  Users,
+  FileBarChart2
 } from 'lucide-react';
 
 interface PendingException {
@@ -40,713 +26,595 @@ interface PendingException {
   ticketId: string;
   patente: string;
   operador: string;
-  tipo: 'COBRO_PARCIAL' | 'DESCUENTO' | 'EXTRAVIO' | 'FUGA';
+  tipo: 'DESCUENTO' | 'TICKET_PERDIDO';
   montoOriginal: number;
-  montoCobrado: number;
+  montoFinal: number;
   motivo: string;
   timestamp: string;
-  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+  estado: 'PENDIENTE' | 'APROBADA';
 }
 
-type AdminModule = 'launcher' | 'overview' | 'approvals' | 'shifts';
-
 export default function AdminDashboardPage() {
-  const [activeModule, setActiveModule] = useState<AdminModule>('launcher');
   const [slots, setSlots] = useState<ParkingSlot[]>([]);
-  const [shifts, setShifts] = useState<Shift[]>([]);
   const [currentShift, setCurrentShift] = useState<Shift | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'antifraud' | 'blindcash'>('overview');
 
-  // Lista de excepciones pendientes para aprobación administrativa
-  const [pendingExceptions, setPendingExceptions] = useState<PendingException[]>([
+  // Estado interactivo de las 4 Barreras (Mockup #2)
+  const [gates, setGates] = useState([
+    { id: 1, name: 'Gate 1 (Main Entry)', status: 'OPEN' as 'OPEN' | 'CLOSED' },
+    { id: 2, name: 'Gate 2 (Main Exit)', status: 'CLOSED' as 'OPEN' | 'CLOSED' },
+    { id: 3, name: 'Gate 3 (Emergency)', status: 'CLOSED' as 'OPEN' | 'CLOSED' },
+    { id: 4, name: 'Gate 4 (VIP Area)', status: 'OPEN' as 'OPEN' | 'CLOSED' },
+  ]);
+
+  // Excepciones de Auditoría Antifraude (Verde = Descuento Operador, Rojo = Ticket Perdido Admin)
+  const [exceptions, setExceptions] = useState<PendingException[]>([
     {
-      id: 'EXC-01',
-      ticketId: 'TKT-20260923-T01-0004',
-      patente: 'JKLP34',
-      operador: 'Carlos Morales',
-      tipo: 'COBRO_PARCIAL',
-      montoOriginal: 3500,
-      montoCobrado: 2000,
-      motivo: 'Cliente argumenta demora por obstrucción en pasillo interno de Serrano 447.',
-      timestamp: '2026-09-23T11:45:00Z',
+      id: 'AUD-VERDE-01',
+      ticketId: 'TKT-20260419-T01-0839',
+      patente: 'JK-LP-34',
+      operador: 'Ana R. (OP-01)',
+      tipo: 'DESCUENTO',
+      montoOriginal: 4500,
+      montoFinal: 3600,
+      motivo: 'Convenio comercial Notaría Serrano con timbre validado en garita (>10 caracteres).',
+      timestamp: '10:42:18 CLT',
+      estado: 'APROBADA',
+    },
+    {
+      id: 'AUD-ROJO-02',
+      ticketId: 'TKT-20260419-T01-0841',
+      patente: 'ABCD-12',
+      operador: 'Ana R. (OP-01)',
+      tipo: 'TICKET_PERDIDO',
+      montoOriginal: 3200,
+      montoFinal: 8000,
+      motivo: 'Extravío de ticket térmico físico declarado por conductor; se aplica multa fija $8.000 CLP.',
+      timestamp: '11:15:04 CLT',
       estado: 'PENDIENTE',
     },
     {
-      id: 'EXC-02',
-      ticketId: 'TKT-20260923-T01-0007',
-      patente: 'ABCD12',
-      operador: 'Carlos Morales',
-      tipo: 'EXTRAVIO',
-      montoOriginal: 14500,
-      montoCobrado: 14500,
-      motivo: 'Conductor perdió el ticket de papel; patente validada en sistema con multa fija $10.000.',
-      timestamp: '2026-09-23T13:10:00Z',
-      estado: 'PENDIENTE',
+      id: 'AUD-VERDE-03',
+      ticketId: 'TKT-20260419-T01-0844',
+      patente: 'RT-WX-91',
+      operador: 'Carlos M. (OP-02)',
+      tipo: 'DESCUENTO',
+      montoOriginal: 3000,
+      montoFinal: 2400,
+      motivo: 'Descuento 20% autorizado por demora en maniobra de camión proveedor en pasillo central.',
+      timestamp: '11:50:30 CLT',
+      estado: 'APROBADA',
     },
   ]);
 
-  // Modal para ingresar PIN/OTP de Administrador
   const [selectedException, setSelectedException] = useState<PendingException | null>(null);
   const [adminPin, setAdminPin] = useState('');
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [bannerMsg, setBannerMsg] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/slots').then((r) => r.json()),
-      fetch('/api/shifts').then((r) => r.json()),
-      fetch('/api/audit').then((r) => r.json()),
-    ])
-      .then(([resSlots, resShifts, resAudit]) => {
-        if (resSlots.slots) setSlots(resSlots.slots);
-        if (resShifts.shift) setCurrentShift(resShifts.shift);
-        if (resAudit.logs) setAuditLogs(resAudit.logs);
-      })
-      .finally(() => setLoading(false));
+      fetch('/api/slots').then((r) => r.json()).catch(() => ({ slots: [] })),
+      fetch('/api/shifts').then((r) => r.json()).catch(() => ({ shift: null })),
+      fetch('/api/audit').then((r) => r.json()).catch(() => ({ logs: [] })),
+    ]).then(([resSlots, resShift, resAudit]) => {
+      if (resSlots.slots) setSlots(resSlots.slots);
+      if (resShift.shift) setCurrentShift(resShift.shift);
+      if (resAudit.logs) setAuditLogs(resAudit.logs);
+    });
   }, []);
 
-  const handleApproveException = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adminPin || adminPin.length < 4) {
-      alert('Ingresa el PIN de Administrador (4 dígitos)');
-      return;
-    }
+  const occupiedCount = slots.filter((s) => s.estado !== 'DISPONIBLE').length || 24;
+  const totalSlots = 30;
+  const occupancyPct = Math.round((occupiedCount / totalSlots) * 100);
 
-    if (selectedException) {
-      setPendingExceptions((prev) =>
-        prev.map((item) =>
-          item.id === selectedException.id ? { ...item, estado: 'APROBADA' } : item
-        )
-      );
-      setActionSuccess(`Excepción ${selectedException.id} aprobada con éxito.`);
-      setSelectedException(null);
-      setAdminPin('');
-      setTimeout(() => setActionSuccess(null), 3000);
-    }
+  const toggleGate = (id: number, nextStatus: 'OPEN' | 'CLOSED') => {
+    setGates((prev) => prev.map((g) => (g.id === id ? { ...g, status: nextStatus } : g)));
+  };
+
+  const handleApproveWithAdminPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPin.length < 4 || !selectedException) return;
+    setExceptions((prev) =>
+      prev.map((ex) =>
+        ex.id === selectedException.id ? { ...ex, estado: 'APROBADA' } : ex
+      )
+    );
+    setBannerMsg(
+      `Excepción ${selectedException.id} (${selectedException.patente}) ratificada con PIN de Administrador.`
+    );
+    setSelectedException(null);
+    setAdminPin('');
   };
 
   const handleExportCSV = () => {
-    // Generar CSV descargable para Google Sheets / Excel
-    const headers = 'ID_Auditoria,Accion,Tipo_Evento,Fecha_Hora,Usuario,Motivo\n';
-    const rows = auditLogs
+    const headers = 'ID,Ticket,Patente,Operador,Tipo,Monto_Original,Monto_Final,Motivo,Estado\n';
+    const rows = exceptions
       .map(
-        (log) =>
-          `"${log.id_auditoria}","${log.accion}","${log.tipo_evento || 'SISTEMA'}","${log.fecha_hora}","${log.nombre_usuario}","${log.motivo || ''}"`
+        (ex) =>
+          `"${ex.id}","${ex.ticketId}","${ex.patente}","${ex.operador}","${ex.tipo}",${ex.montoOriginal},${ex.montoFinal},"${ex.motivo}","${ex.estado}"`
       )
       .join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `reporte_parkops_cordano_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `auditoria_antifraude_cordano_serrano447.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const occupiedCount = slots.filter((s) => s.estado === 'OCUPADO').length;
-  const pendingApprovalsCount = pendingExceptions.filter((e) => e.estado === 'PENDIENTE').length;
-
   return (
-    <div className="min-h-screen bg-[#06080E] text-white flex flex-col font-sans selection:bg-[#80093A] selection:text-white relative overflow-hidden">
-      {/* Background Texture from Magnific AI */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-40 pointer-events-none mix-blend-screen"
-        style={{ backgroundImage: "url('/hub-bg.jpg')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#06080E]/60 to-[#06080E] pointer-events-none" />
+    <MacOSNavigationShell
+      title="Panel de Control Ejecutivo"
+      subtitle="Serrano 447 · Telemetría KPI, Control de Barreras, Auditoría PIN y Caja Ciega"
+      roleLabel="Administrador ERP"
+      rightActions={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+      }
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Regla 7 AGENTS.md: Incompatibilidad de Caja para Administradores */}
+        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900">
+          <div className="flex items-center gap-2.5">
+            <Lock className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>Regla de Segregación RBAC (Incompatibilidad de Caja):</strong> El rol de{' '}
+              <strong>Administrador</strong> audita arqueos, autoriza anulaciones con PIN y configura tarifas, pero{' '}
+              <strong>no puede abrir turnos de caja directamente</strong>.
+            </span>
+          </div>
+          <Link
+            href="/admin/usuarios"
+            className="font-bold text-[#80093A] hover:underline shrink-0"
+          >
+            Ver Matriz RBAC →
+          </Link>
+        </div>
 
-      {/* BARRA SUPERIOR MINIMALISTA macOS */}
-      <header className="relative z-40 glass-panel mx-4 mt-4 rounded-[2rem] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/hub"
-              className="w-10 h-10 rounded-2xl bg-black/50 border border-white/10 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition"
-              title="Volver al Menú Principal (Launchpad)"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/cordano-logo.png" alt="Cordano Logo" className="w-full h-full object-contain p-1" />
-            </Link>
-            <div>
-              <span className="font-extrabold text-base tracking-wide text-white flex items-center gap-2">
-                CORDANO ADMIN
-                <span className="bg-[#80093A] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                  ERP V4.0
-                </span>
-              </span>
-              <p className="text-[11px] text-slate-400 font-mono">Serrano 447, Iquique</p>
+        {bannerMsg && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 font-bold flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>{bannerMsg}</span>
+            </div>
+            <button type="button" onClick={() => setBannerMsg(null)}>
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
+        )}
+
+        {/* 1. FILA DE 4 TARJETAS KPI (Mockup #2) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Occupancy (Serrano 447)
+            </span>
+            <div className="text-2xl font-mono font-black text-slate-900 tabular-nums mt-1">
+              {occupiedCount}/{totalSlots}{' '}
+              <span className="text-sm text-[#80093A]">({occupancyPct}%)</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mt-3">
+              <div
+                className="h-full bg-[#80093A] rounded-full"
+                style={{ width: `${Math.min(100, occupancyPct)}%` }}
+              />
             </div>
           </div>
 
-          {/* Navegación Switcher Central */}
-          <div className="flex items-center gap-2">
-            {activeModule !== 'launcher' ? (
-              <div className="flex items-center gap-1.5 glass-panel p-1 rounded-2xl">
-                <button
-                  onClick={() => setActiveModule('launcher')}
-                  className="px-3 py-1.5 macos-btn text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
-                  title="Volver a la cuadrícula de módulos"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Módulos</span>
-                </button>
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Daily Revenue (Rotativo)
+            </span>
+            <div className="text-2xl font-mono font-black text-emerald-700 tabular-nums mt-1">
+              $185.000 <span className="text-xs font-bold text-slate-400">CLP</span>
+            </div>
+            <span className="text-[11px] text-slate-500 mt-2 block">
+              Excluye convenios mensuales en paralelo
+            </span>
+          </div>
 
-                <select
-                  value={activeModule}
-                  onChange={(e) => setActiveModule(e.target.value as AdminModule)}
-                  className="bg-transparent text-xs text-white font-semibold outline-none px-2 py-1 cursor-pointer"
-                >
-                  <option value="overview" className="bg-[#06080E] text-white">
-                    📊 Monitoreo y Plazas
-                  </option>
-                  <option value="approvals" className="bg-[#06080E] text-white">
-                    🔑 Cola de Aprobaciones ({pendingApprovalsCount})
-                  </option>
-                  <option value="shifts" className="bg-[#06080E] text-white">
-                    💼 Turnos y Arqueo Ciego
-                  </option>
-                </select>
-              </div>
-            ) : (
-              <span className="text-xs font-mono text-slate-400 hidden sm:inline-block">
-                Launchpad de Aplicaciones Administrativas
-              </span>
-            )}
+          <div className="bg-white p-5 rounded-2xl border border-[#E2E2E4] shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+              Active Shifts
+            </span>
+            <div className="text-2xl font-mono font-black text-slate-900 tabular-nums mt-1">
+              2 <span className="text-xs font-semibold text-emerald-600">● En Curso</span>
+            </div>
+            <span className="text-[11px] font-mono text-slate-500 mt-2 block">
+              Caja Base: ${(currentShift?.monto_inicial_caja || 50000).toLocaleString('es-CL')} CLP
+            </span>
+          </div>
 
-            <button
-              onClick={handleExportCSV}
-              className="px-3.5 py-2 macos-btn text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition"
-              title="Descargar auditoría completa en CSV/Excel"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Excel / Sheets</span>
-            </button>
-
-            <Link
-              href="/"
-              className="px-3.5 py-2 macos-btn-primary rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
-            >
-              <Car className="w-3.5 h-3.5 text-white" />
-              <span className="hidden sm:inline">Garita POS</span>
-            </Link>
+          <div className="bg-rose-50/70 p-5 rounded-2xl border border-rose-200 shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 block">
+              Alerts & Excepciones PIN
+            </span>
+            <div className="text-2xl font-mono font-black text-rose-700 tabular-nums mt-1 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <span>1 Alerta Activa</span>
+            </div>
+            <span className="text-[11px] text-rose-700 mt-2 block">
+              Sobrestadía en Plaza A-04 (&gt;4h)
+            </span>
           </div>
         </div>
-      </header>
 
-      {/* CUERPO PRINCIPAL */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* ALERTA DE ÉXITO */}
-        {actionSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-sm animate-fadeIn">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>{actionSuccess}</span>
+        {/* Pestañas de Submódulos del Panel de Control */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div className="flex bg-white p-1 rounded-xl border border-slate-200 text-xs font-bold shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-lg transition cursor-pointer ${
+                activeTab === 'overview'
+                  ? 'bg-[#80093A] text-white'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Control de Barreras & IA
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('antifraud')}
+              className={`px-4 py-2 rounded-lg transition cursor-pointer ${
+                activeTab === 'antifraud'
+                  ? 'bg-[#80093A] text-white'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Auditoría Antifraude PIN (Verde / Rojo)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('blindcash')}
+              className={`px-4 py-2 rounded-lg transition cursor-pointer ${
+                activeTab === 'blindcash'
+                  ? 'bg-[#80093A] text-white'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Cuadre de Caja Ciega
+            </button>
           </div>
-        )}
 
-        {/* 1. LOBBY / APP LAUNCHER ESTILO ODOO / MACOS LAUNCHPAD */}
-        {activeModule === 'launcher' && (
-          <div className="space-y-6">
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Panel de Módulos • Cordano Inversiones Inmobiliarias
-              </h1>
-              <p className="text-sm text-slate-500 mt-1">
-                Selecciona una aplicación para supervisión, conciliación financiera, auditoría o soporte operativo.
-              </p>
-            </div>
+          <span className="text-xs font-mono text-slate-500">
+            Folio Turno: <strong>{currentShift?.id_turno || 'TURNO-20260419-M01'}</strong>
+          </span>
+        </div>
 
-            {/* Cuadrícula de 8 Módulos estilo macOS Squircles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {/* Módulo 1: Garita Operativa */}
-              <Link
-                href="/"
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <Car className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    En Vivo
-                  </span>
-                </div>
+        {/* SUB-VISTA 1: CONTROL DE BARRERAS EN TIEMPO REAL & RESUMEN IA */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-[#E2E2E4] p-5 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Garita Operativa (POS)
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Ingreso, cobro automático, tickets e impresión térmica.
+                  <h2 className="text-base font-extrabold text-slate-900">
+                    Real-Time Gate Controls (Serrano 447)
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Accionamiento remoto de barreras electromecánicas y lazo inductivo
                   </p>
                 </div>
-              </Link>
-
-              {/* Módulo 2: Monitoreo en Vivo */}
-              <button
-                onClick={() => setActiveModule('overview')}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 text-left relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-[#80093A]/10 text-[#80093A] flex items-center justify-center group-hover:scale-105 transition">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono">
-                    {occupiedCount}/30 Plazas
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Monitoreo & Plazas
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Matriz de ocupación 7×5, cronómetros y recaudación en tiempo real.
-                  </p>
-                </div>
-              </button>
-
-              {/* Módulo 3: Aprobaciones de Excepciones */}
-              <button
-                onClick={() => setActiveModule('approvals')}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 text-left relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <KeyRound className="w-6 h-6" />
-                  </div>
-                  {pendingApprovalsCount > 0 ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
-                      {pendingApprovalsCount} Pendientes
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
-                      Al día
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Aprobaciones con PIN
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Visar descuentos, cobros parciales y tickets perdidos.
-                  </p>
-                </div>
-              </button>
-
-              {/* Módulo 4: Turnos y Arqueo Ciego */}
-              <button
-                onClick={() => setActiveModule('shifts')}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 text-left relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <Clock className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    Arqueo Ciego
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Turnos & Conciliación
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Auditoría de caja ciega, sellos criptográficos y Reporte Z.
-                  </p>
-                </div>
-              </button>
-
-              {/* Módulo 5: Reportes y Excel */}
-              <Link
-                href="/reportes"
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <FileSpreadsheet className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
-                    Export .xlsx
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Reportes & Auditoría
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Descarga en 1 clic para Google Sheets, filtros de fechas y medios de pago.
-                  </p>
-                </div>
-              </Link>
-
-              {/* Módulo 6: Configuración ERP */}
-              <Link
-                href="/configuracion"
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <Settings className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                    Tarifas & WhatsApp
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Configuración ERP
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Tarifas por minuto, tiempos de gracia, WhatsApp garita y PINs.
-                  </p>
-                </div>
-              </Link>
-
-              {/* Módulo 7: CCTV & Seguridad */}
-              <Link
-                href="/cctv"
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <Video className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800">
-                    CCTV 1080p
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    CCTV Serrano 447
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Circuito cerrado de televisión, cámaras de acceso y patio central.
-                  </p>
-                </div>
-              </Link>
-
-              {/* Módulo 8: Documentación y Manuales SOP */}
-              <Link
-                href="/documentacion"
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md hover:border-[#80093A] transition-all group flex flex-col justify-between h-44 relative overflow-hidden"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-700 flex items-center justify-center group-hover:scale-105 transition">
-                    <BookOpen className="w-6 h-6" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-800">
-                    SOP Fases 1-6
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900 group-hover:text-[#80093A] transition">
-                    Manuales & Soporte
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Guía de garita, atajos de teclado, FAQ de contingencia y PRD técnico.
-                  </p>
-                </div>
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* 2. VISTA DETALLADA: MONITOREO EN VIVO Y PLAZAS */}
-        {activeModule === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Recaudación Turno Actual
-                </span>
-                <div className="text-2xl font-bold font-mono text-slate-900 tabular-nums mt-1">
-                  $184.500 CLP
-                </div>
-                <span className="text-xs text-emerald-600 font-semibold mt-1 inline-block">
-                  42 Tickets cobrados hoy
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[11px] font-bold">
+                  4/4 Online
                 </span>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Ocupación Serrano 447
-                </span>
-                <div className="text-2xl font-bold font-mono text-slate-900 tabular-nums mt-1">
-                  {occupiedCount} / 30 Plazas
-                </div>
-                <span className="text-xs text-slate-500 mt-1 inline-block">
-                  {30 - occupiedCount} Disponibles en este momento
-                </span>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Desglose Efectivo vs Digital
-                </span>
-                <div className="text-sm font-mono text-slate-700 mt-2 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Efectivo:</span>
-                    <strong className="text-slate-900">$124.500 (67%)</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tarjeta/Transf:</span>
-                    <strong className="text-slate-900">$60.000 (33%)</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  Estado de Auditoría
-                </span>
-                <div className="text-base font-bold text-emerald-700 mt-1 flex items-center gap-1.5">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                  <span>Cadena SHA-256 Íntegra</span>
-                </div>
-                <span className="text-xs text-slate-400 font-mono mt-1 block">
-                  Sin alteraciones de base de datos
-                </span>
-              </div>
-            </div>
-
-            {/* Listado rápido de Plazas */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-base text-slate-900">
-                  Estado de las 35 Plazas (Sector A, B y Sobrecupo)
-                </h3>
-                <Link href="/" className="text-xs text-[#80093A] font-bold hover:underline">
-                  Ver en Garita POS &rarr;
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-7 gap-2">
-                {slots.map((s) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {gates.map((gate) => (
                   <div
-                    key={s.id}
-                    className={`p-2.5 rounded-xl border text-center ${
-                      s.estado === 'OCUPADO'
-                        ? 'bg-slate-900 border-slate-800 text-white'
-                        : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                    }`}
+                    key={gate.id}
+                    className="p-4 rounded-2xl bg-[#F9F9FB] border border-slate-200 flex items-center justify-between"
                   >
-                    <span className="text-xs font-bold font-mono">{s.codigo}</span>
-                    <div className="text-[10px] mt-0.5 truncate font-mono">
-                      {s.estado === 'OCUPADO' ? s.ticket_actual?.patente || 'OCUPADO' : 'Libre'}
+                    <div>
+                      <span className="text-xs font-extrabold text-slate-900 block">
+                        {gate.name}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold mt-1 ${
+                          gate.status === 'OPEN' ? 'text-emerald-600' : 'text-slate-500'
+                        }`}
+                      >
+                        {gate.status === 'OPEN' ? (
+                          <Unlock className="w-3.5 h-3.5" />
+                        ) : (
+                          <Lock className="w-3.5 h-3.5" />
+                        )}
+                        <span>Status: {gate.status}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleGate(gate.id, 'OPEN')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-extrabold cursor-pointer transition ${
+                          gate.status === 'OPEN'
+                            ? 'bg-[#10B981] text-white'
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}
+                      >
+                        OPEN
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleGate(gate.id, 'CLOSED')}
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-extrabold cursor-pointer transition ${
+                          gate.status === 'CLOSED'
+                            ? 'bg-[#EF4444] text-white'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        CLOSE
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-[#E2E2E4] p-5 space-y-4 shadow-2xs flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-[#80093A]">
+                  <Sparkles className="w-5 h-5" />
+                  <h2 className="text-base font-extrabold">AI Operational Summary</h2>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed bg-[#F9F9FB] p-4 rounded-xl border border-slate-200">
+                  Peak occupancy expected at <strong className="font-mono">14:00</strong>. All systems nominal.
+                  La rotación promedio del turno mañana es de <strong className="font-mono">48 min</strong> por vehículo con ticket medio de <strong className="font-mono">$2.850 CLP</strong>.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+                <Link
+                  href="/reportes"
+                  className="p-3 rounded-xl bg-[#F9F9FB] hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-between"
+                >
+                  <span>Reporte Z SHA-256</span>
+                  <FileBarChart2 className="w-4 h-4 text-[#80093A]" />
+                </Link>
+                <Link
+                  href="/convenios"
+                  className="p-3 rounded-xl bg-[#F9F9FB] hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 flex items-center justify-between"
+                >
+                  <span>Convenios & Noche</span>
+                  <Users className="w-4 h-4 text-[#80093A]" />
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* 3. VISTA DETALLADA: COLA DE APROBACIONES CON PIN */}
-        {activeModule === 'approvals' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                Cola de Aprobaciones de Excepciones de Garita
-              </h2>
-              <p className="text-xs text-slate-500">
-                El operador registró estas operaciones bajo su PIN. El turno no podrá cerrarse hasta que el Administrador las vise.
-              </p>
+        {/* SUB-VISTA 2: AUDITORÍA ANTIFRAUDE PIN (VERDE DESCUENTOS / ROJO TICKET PERDIDO) */}
+        {activeTab === 'antifraud' && (
+          <div className="bg-white rounded-2xl border border-[#E2E2E4] p-5 space-y-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900">
+                  Bitácora Antifraude por PIN (Regla 5 AGENTS.md)
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Resaltado cromático obligatorio: <strong className="text-emerald-700">Verde</strong> para Descuentos con PIN Operador (&gt;10 caracteres) y <strong className="text-rose-700">Rojo</strong> para Ticket Extraviado con PIN Admin.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {exceptions.map((ex) => {
+                const isDiscount = ex.tipo === 'DESCUENTO';
+                return (
+                  <div
+                    key={ex.id}
+                    className={`p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      isDiscount
+                        ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+                        : 'bg-rose-50/70 border-rose-300 text-rose-950'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold uppercase ${
+                            isDiscount
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-rose-600 text-white'
+                          }`}
+                        >
+                          {isDiscount ? '🟢 DESCUENTO PIN OPERADOR' : '🔴 TICKET PERDIDO PIN ADMIN'}
+                        </span>
+                        <span className="font-mono font-black text-sm">{ex.patente}</span>
+                        <span className="font-mono text-xs opacity-75">({ex.ticketId})</span>
+                        <span className="text-xs font-semibold">• {ex.operador}</span>
+                        <span className="font-mono text-[11px] opacity-75">• {ex.timestamp}</span>
+                      </div>
+                      <p className="text-xs font-medium">
+                        <strong>Justificación registrada:</strong> “{ex.motivo}”
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right font-mono tabular-nums">
+                        <span className="text-[11px] line-through opacity-70 block">
+                          Base: ${ex.montoOriginal.toLocaleString('es-CL')}
+                        </span>
+                        <span className="text-base font-black">
+                          Final: ${ex.montoFinal.toLocaleString('es-CL')} CLP
+                        </span>
+                      </div>
+
+                      {ex.estado === 'PENDIENTE' ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedException(ex)}
+                          className="px-3.5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-extrabold cursor-pointer shadow-xs"
+                        >
+                          Visar con PIN Admin
+                        </button>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-xl bg-white/80 border border-current/20 text-[11px] font-mono font-bold">
+                          ✓ Visado PIN
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* SUB-VISTA 3: ARQUEO DE CAJA CIEGA (EFECTIVO SISTEMA VS RECONTADO = DIFERENCIA) */}
+        {activeTab === 'blindcash' && (
+          <div className="bg-white rounded-2xl border border-[#E2E2E4] p-5 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900">
+                  Auditoría de Cierres de Caja Ciega (Sección 9.2 del Catálogo)
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Fórmula canónica: Efectivo Sistema vs Efectivo Recontado Físico = Diferencia / Cuadre
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-bold">
+                SHA-256 Verificado
+              </span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider border-y border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-3">Ticket / Patente</th>
-                    <th className="py-2.5 px-3">Operador</th>
-                    <th className="py-2.5 px-3">Tipo Excepción</th>
-                    <th className="py-2.5 px-3 text-right">Monto Original</th>
-                    <th className="py-2.5 px-3 text-right">Monto Cobrado</th>
-                    <th className="py-2.5 px-3">Motivo Declarado</th>
-                    <th className="py-2.5 px-3 text-center">Acción</th>
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                    <th className="py-3 px-3">Turno / Fecha</th>
+                    <th className="py-3 px-3">Operador</th>
+                    <th className="py-3 px-3 text-right">Fondo Inicial</th>
+                    <th className="py-3 px-3 text-right">Efectivo Sistema</th>
+                    <th className="py-3 px-3 text-right">Efectivo Recontado Físico</th>
+                    <th className="py-3 px-3 text-right">Diferencia / Cuadre</th>
+                    <th className="py-3 px-3">Hash SHA-256</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {pendingExceptions.map((exc) => (
-                    <tr key={exc.id} className="hover:bg-slate-50">
-                      <td className="py-3 px-3">
-                        <span className="font-mono font-bold text-slate-900">{exc.patente}</span>
-                        <span className="block text-[11px] font-mono text-slate-400">{exc.ticketId}</span>
-                      </td>
-                      <td className="py-3 px-3 text-slate-700">{exc.operador}</td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            exc.tipo === 'COBRO_PARCIAL'
-                              ? 'bg-amber-100 text-amber-800'
-                              : exc.tipo === 'EXTRAVIO'
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}
-                        >
-                          {exc.tipo}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono text-slate-500 tabular-nums">
-                        ${exc.montoOriginal.toLocaleString('es-CL')}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
-                        ${exc.montoCobrado.toLocaleString('es-CL')}
-                      </td>
-                      <td className="py-3 px-3 text-slate-600 max-w-xs">{exc.motivo}</td>
-                      <td className="py-3 px-3 text-center">
-                        {exc.estado === 'PENDIENTE' ? (
-                          <button
-                            onClick={() => setSelectedException(exc)}
-                            className="px-3 py-1.5 bg-[#80093A] hover:bg-[#A52C55] text-white rounded-lg text-xs font-bold transition shadow-sm"
-                          >
-                            Visar con PIN
-                          </button>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs">
-                            <Check className="w-3.5 h-3.5" /> Aprobada
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td className="py-3.5 px-3 font-bold text-slate-900">
+                      TURNO-20260419-M01
+                    </td>
+                    <td className="py-3.5 px-3 font-sans font-semibold text-slate-700">
+                      Ana R. (OP-01)
+                    </td>
+                    <td className="py-3.5 px-3 text-right">$50.000</td>
+                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">$142.500</td>
+                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">$142.500</td>
+                    <td className="py-3.5 px-3 text-right">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                        $0 (Cuadre Exacto)
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-slate-500">9f86d081...8b4c2a</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3.5 px-3 font-bold text-slate-900">
+                      TURNO-20260418-T02
+                    </td>
+                    <td className="py-3.5 px-3 font-sans font-semibold text-slate-700">
+                      Carlos M. (OP-02)
+                    </td>
+                    <td className="py-3.5 px-3 text-right">$50.000</td>
+                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">$168.000</td>
+                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">$166.500</td>
+                    <td className="py-3.5 px-3 text-right">
+                      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold">
+                        -$1.500 (Faltante)
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-3 text-slate-500">4e074085...623f19</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         )}
+      </div>
 
-        {/* 4. VISTA DETALLADA: TURNOS Y ARQUEO CIEGO */}
-        {activeModule === 'shifts' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">
-                  Histórico de Turnos y Conciliación de Cajas
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Auditoría inmutable de arqueos ciegos, sellos SHA-256 y diferencias de caja.
-                </p>
-              </div>
-              <Link href="/reportes" className="text-xs text-[#80093A] font-bold hover:underline">
-                Ver Todos los Reportes &rarr;
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-emerald-900">
-                  <span>Turno SHF-20260922-T01</span>
-                  <span className="text-[10px] bg-emerald-200 px-2 py-0.5 rounded">Caja Cuadrada</span>
-                </div>
-                <p className="text-xs text-slate-600 font-mono">Operador: Carlos Morales • 22 Sep</p>
-                <div className="flex justify-between font-mono text-xs pt-1 border-t border-emerald-200/60 tabular-nums">
-                  <span className="text-slate-500">Recaudación: $184.500</span>
-                  <span className="text-emerald-700 font-bold">Diferencia: $0</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50 space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-rose-900">
-                  <span>Turno SHF-20260921-T02</span>
-                  <span className="text-[10px] bg-rose-200 px-2 py-0.5 rounded">Faltante $5.000</span>
-                </div>
-                <p className="text-xs text-slate-600 font-mono">Operador: Braulio A. • 21 Sep</p>
-                <div className="flex justify-between font-mono text-xs pt-1 border-t border-rose-200/60 tabular-nums">
-                  <span className="text-slate-500">Recaudación: $142.000</span>
-                  <span className="text-rose-700 font-bold">Diferencia: -$5.000</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-slate-200 bg-[#F9F9FB] space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-800">
-                  <span>Turno SHF-20260921-T01</span>
-                  <span className="text-[10px] bg-slate-200 px-2 py-0.5 rounded">Caja Cuadrada</span>
-                </div>
-                <p className="text-xs text-slate-600 font-mono">Operador: Carlos Morales • 21 Sep</p>
-                <div className="flex justify-between font-mono text-xs pt-1 border-t border-slate-200 tabular-nums">
-                  <span className="text-slate-500">Recaudación: $195.000</span>
-                  <span className="text-slate-700 font-bold">Diferencia: $0</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* MODAL PARA VISAR EXCEPCIÓN CON PIN DE ADMINISTRADOR */}
+      {/* Modal de Visado con PIN Administrador */}
       {selectedException && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-scaleUp">
-            <div className="flex justify-between items-center border-b pb-2">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                <KeyRound className="w-4 h-4 text-[#80093A]" />
-                Aprobación de Excepción con PIN
-              </h3>
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setSelectedException(null)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-[#80093A]" />
+                <h3 className="text-sm font-extrabold text-slate-900">
+                  Ratificar Excepción con PIN Administrador
+                </h3>
+              </div>
               <button
+                type="button"
                 onClick={() => setSelectedException(null)}
-                className="text-slate-400 hover:text-slate-700 font-bold"
+                className="text-slate-400 hover:text-slate-700"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2 text-xs font-mono bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Patente:</span>
-                <span className="font-bold text-slate-900">{selectedException.patente}</span>
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
+              <div className="font-mono font-bold">
+                {selectedException.patente} • {selectedException.ticketId}
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Tipo:</span>
-                <span className="font-bold text-[#80093A]">{selectedException.tipo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Diferencia:</span>
-                <span className="font-bold text-rose-700 tabular-nums">
-                  -${(selectedException.montoOriginal - selectedException.montoCobrado).toLocaleString('es-CL')} CLP
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-600 pt-1 font-sans border-t border-slate-200">
-                &ldquo;{selectedException.motivo}&rdquo;
-              </p>
+              <p>{selectedException.motivo}</p>
             </div>
 
-            <form onSubmit={handleApproveException} className="space-y-3">
+            <form onSubmit={handleApproveWithAdminPin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                  PIN de Administrador (4 Dígitos)
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  PIN Administrador (4 dígitos)
                 </label>
                 <input
                   type="password"
                   maxLength={4}
-                  value={adminPin}
-                  onChange={(e) => setAdminPin(e.target.value)}
-                  placeholder="••••"
-                  className="w-full text-center tracking-widest text-lg font-mono py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#80093A] outline-none"
-                  autoFocus
                   required
+                  autoFocus
+                  value={adminPin}
+                  onChange={(e) => setAdminPin(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="••••"
+                  className="w-full h-12 text-center font-mono font-black text-2xl tracking-[0.5em] rounded-xl bg-[#F9F9FB] border border-slate-300"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedException(null)}
-                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition"
+                  className="flex-1 h-11 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-[#80093A] hover:bg-[#A52C55] text-white rounded-xl font-bold text-xs transition shadow-sm"
+                  className="flex-1 h-11 rounded-xl bg-[#80093A] text-white text-xs font-extrabold cursor-pointer"
                 >
-                  Autorizar
+                  Confirmar PIN Admin
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </MacOSNavigationShell>
   );
 }
