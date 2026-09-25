@@ -1,114 +1,104 @@
-# CORDANO PMS V1 — Sistema de Gestión de Estacionamientos
-**ParkOps Iquique (Serrano 447)**
+# 🚗 ParkOps PMS & ERP — Cordano Inversiones Inmobiliarias Ltda.
+**Instalación Operativa: Serrano 447, Iquique, Región de Tarapacá, Chile**
 
-Conectado y preparado para **Google Cloud Run** en el proyecto:
-- **ID de Proyecto GCP**: `gen-lang-client-0862587160`
-- **Número de Proyecto**: `349577440002`
-- **Región**: `us-west1`
-- **Servicio Cloud Run (Independiente)**: `cordano-pms-v1`
-
----
-
-## 🚀 Arquitectura y Principio de Independencia en Cloud Run
-
-Este proyecto está configurado para desplegarse como un **servicio independiente** en Google Cloud Run. Esto significa:
-1. **Aislamiento Total**: No altera ni sobrescribe ninguna otra aplicación o servicio que ya esté corriendo en tu proyecto `gen-lang-client-0862587160`.
-2. **URL y Ciclo de Vida Propios**: Obtiene su propia URL HTTPS gestionada por Google (ej. `https://cordano-pms-v1-349577440002.us-west1.run.app`).
-3. **Escalado Automático a Cero**: Costo eficiente (escala de 0 a 10 instancias según demanda).
-4. **Contenedor Standalone**: Empaquetado optimizado con Node 20 y Next.js Standalone.
+[![Open in Project IDX](https://img.shields.io/badge/Open_in-Project_IDX-blue?logo=google&logoColor=white&style=for-the-badge)](https://idx.google.com/import?url=https%3A%2F%2Fgithub.com%2Fbrau450unab%2Fcordano-pms-v1)
+[![Google AI Studio](https://img.shields.io/badge/Google_AI_Studio-Gemini_2.0_Ready-8E75FF?logo=google&logoColor=white&style=for-the-badge)](https://aistudio.google.com/)
+[![Google Stitch](https://img.shields.io/badge/Google_Stitch-Project_12916038623650348087-00C853?style=for-the-badge)](https://stitch.withgoogle.com/projects/12916038623650348087)
+[![Google Cloud Run](https://img.shields.io/badge/Google_Cloud_Run-cordano--pms--v1-4285F4?logo=googlecloud&logoColor=white&style=for-the-badge)](https://cordano-pms-v1-349577440002.us-west1.run.app)
 
 ---
 
-## 📋 Módulos Implementados
+## 🌐 Ecosistema de Plataformas Conectadas
 
-1. **POS de Entrada (Check-In)**:
-   - Validación Anti-Passback en memoria (<100ms) para evitar cobros dobles o ingresos duplicados.
-   - SLA operativo < 10 segundos.
-   - Emisión de ticket canónico: `TKT-AAAAMMDD-T0X-XXXX`.
-   - Envío de ticket digital vía WhatsApp.
-
-2. **POS de Salida (Check-Out)**:
-   - Cálculo automático de permanencia según tarifas ($35/min auto, $45/min camioneta, $25/min moto).
-   - Período de gracia inicial de 10 minutos (cobro $0).
-   - Calculador de Vuelto asistido para evitar descuadres en efectivo.
-   - Medios de pago: Efectivo, Tarjeta, Transferencia.
-
-3. **Layout en Tiempo Real (30 Slots)**:
-   - Grilla interactiva de los 30 espacios divididos en Sector A (1 a 15) y Sector B (16 a 30).
-   - Estados: Verde (Libre) / Rojo (Ocupado con patente y tiempo transcurrido).
-
-4. **Cierre de Caja Ciego (Shift Close)**:
-   - El operador declara físicamente el dinero contado sin conocer el monto esperado por el sistema.
-   - Cálculo instantáneo de descuadre (sobrante / faltante / cuadrada).
-
-5. **Bitácora Inmutable de Auditoría**:
-   - Registro secuencial con ID único de cada apertura, ingreso, salida y cierre.
-
-6. **Panel y Conexión Cloud Run**:
-   - Diagnóstico de conexión en tiempo real.
-   - Herramienta para probar conectividad y latencia con tu aplicación existente de Cloud Run.
+```text
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                   ParkOps Cordano - Ecosistema Unificado               │
+  └────────────────────────────────────────────────────────────────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+ ┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+ │ Google Cloud  │           │   Google AI   │           │ Google Stitch │
+ │   Cloud Run   │           │    Studio     │           │ Design Tokens │
+ │ cordano-pms-v1│           │ Gemini 2.0/2.5│           │ Project 1291..│
+ └───────┬───────┘           └───────┬───────┘           └───────┬───────┘
+         │                           │                           │
+         └───────────────────────────┼───────────────────────────┘
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │    GitHub: brau450unab/       │
+                     │       cordano-pms-v1          │
+                     └───────────────┬───────────────┘
+                                     ▼
+                     ┌───────────────────────────────┐
+                     │  Garita Serrano 447 (Iquique) │
+                     │  Offline-First & 30 Plazas    │
+                     └───────────────────────────────┘
+```
 
 ---
 
-## 📚 Documentación del Proyecto
+## ⚡ Importación en 1-Click: Google Project IDX & Google AI Studio
 
-El repositorio cuenta con una estructura documental estandarizada en `/docs`:
-- **Documentación Vigente (Versión 2.0 Canónica)**:
-  - [`PRD_SISTEMA_DE_PARKING.md`](file:///c:/Users/BraulioAM/OneDrive%20-%20UNIVERSIDAD%20ANDRES%20BELLO/PROYECTOS%20ANTIGRAVITY/NUEVO%20PMS%20CORDANO/docs/PRD_SISTEMA_DE_PARKING.md): Requerimientos de producto, flujo de 5 fases, caja ciega y perfiles.
-  - [`PARKOPS_ESPECIFICACIONES_TECNICAS_V2.md`](file:///c:/Users/BraulioAM/OneDrive%20-%20UNIVERSIDAD%20ANDRES%20BELLO/PROYECTOS%20ANTIGRAVITY/NUEVO%20PMS%20CORDANO/docs/PARKOPS_ESPECIFICACIONES_TECNICAS_V2.md): Microservicio Cloud Run, contratos de tickets, sellos SHA-256 e IndexedDB.
-  - [`ESPECIFICACION_DISENO_FLUJO_Y_LANDING.md`](file:///c:/Users/BraulioAM/OneDrive%20-%20UNIVERSIDAD%20ANDRES%20BELLO/PROYECTOS%20ANTIGRAVITY/NUEVO%20PMS%20CORDANO/docs/ESPECIFICACION_DISENO_FLUJO_Y_LANDING.md): Especificación UI/UX macOS, bi-panel 40/60 y modales `backdrop-blur`.
-  - [`MAPA_DE_SITIO_Y_ARQUITECTURA.md`](file:///c:/Users/BraulioAM/OneDrive%20-%20UNIVERSIDAD%20ANDRES%20BELLO/PROYECTOS%20ANTIGRAVITY/NUEVO%20PMS%20CORDANO/docs/MAPA_DE_SITIO_Y_ARQUITECTURA.md): Diagrama de rutas, roles RBAC y accesos.
-  - [`INDICE_DOCUMENTACION.md`](file:///c:/Users/BraulioAM/OneDrive%20-%20UNIVERSIDAD%20ANDRES%20BELLO/PROYECTOS%20ANTIGRAVITY/NUEVO%20PMS%20CORDANO/docs/INDICE_DOCUMENTACION.md): Índice maestro de documentos vigentes y archivo histórico.
-- **Archivo Histórico (`[ARCHIVADO]_`)**:
-  - Las versiones anteriores y borradores preliminares han sido archivados con el prefijo `[ARCHIVADO]_` para fines de trazabilidad.
-  - API de acceso programático y resolución inteligente: `GET /api/docs`.
+Este repositorio está especialmente estructurado con los estándares de Google (`.idx/dev.nix` y `google-ai-studio/`) para ser importado automáticamente:
+
+### Opción A: Abrir directamente en Google Project IDX
+1. Haz clic en el botón **[Open in Project IDX](https://idx.google.com/import?url=https%3A%2F%2Fgithub.com%2Fbrau450unab%2Fcordano-pms-v1)**.
+2. O ingresa a [idx.google.com](https://idx.google.com/) e importa la URL: `https://github.com/brau450unab/cordano-pms-v1`.
+3. El entorno en la nube se configurará solo (Node.js 20, extensiones Gemini, preview web en puerto 3000).
+
+### Opción B: Importar Prompts en Google AI Studio (`aistudio.google.com`)
+Consulta la **[Guía Oficial de Integración con Google AI Studio](GOOGLE_AI_STUDIO_IMPORT_GUIDE.md)** para importar los prompts estructurados de:
+- **LPR / OCR de Patentes Chilenas**: [`google-ai-studio/prompts/lpr_plate_recognition_v2.json`](google-ai-studio/prompts/lpr_plate_recognition_v2.json)
+- **Inspección Previa de Daños**: [`google-ai-studio/prompts/damage_inspection_multimodal.json`](google-ai-studio/prompts/damage_inspection_multimodal.json)
+- **Auditoría Financiera de Arqueo Ciego**: [`google-ai-studio/prompts/cashier_shift_audit.json`](google-ai-studio/prompts/cashier_shift_audit.json)
+- **Copiloto de Garita con Function Calling**: [`google-ai-studio/prompts/garita_copilot_assistant.json`](google-ai-studio/prompts/garita_copilot_assistant.json)
+- **Esquema de Tools & Function Calling**: [`google-ai-studio/tools_schema.json`](google-ai-studio/tools_schema.json)
+
+---
+
+## 🏢 Características de ParkOps PMS & ERP
+
+- **30 Plazas Físicas**: Sector A (01 al 15) y Sector B (16 al 30) en Serrano 447, Iquique.
+- **Ergonomía de Garita (Keyboard-First)**: Atajos directos `F1` a `F9`, `Enter` y `Esc`. Flujo operativo 100% sin scroll.
+- **Estética macOS Liquid Glass**: Titanium Obsidian (`#06080E`), acento Borgoña Cordano (`#80093A`), números tabulares monoespaciados (`Geist Mono`).
+- **Offline-First Resilience**: Persistencia local en IndexedDB con emisión de tickets canónicos `TKT-AAAAMMDD-T0X-XXXXO`.
+- **Auditoría Antifraude y Caja Ciega**: Arqueo sin montos a la vista, validación de PIN para descuentos (>10 caracteres) y supervisión obligatoria para tickets extraviados.
+- **Servicios Paralelos**: Gestión independiente de Pernocta ($8.000/noche) y Abonados VIP ($75.000/mes) sin distorsionar la rotación por minuto.
 
 ---
 
 ## 🛠️ Ejecución Local
 
-Para ejecutar la aplicación localmente en tu equipo:
-
 ```bash
-# Iniciar servidor de desarrollo (puerto 3000)
+# 1. Instalar dependencias
+npm install
+
+# 2. Configurar variables de entorno (.env.local)
+cp .env.example .env.local  # Agrega tu GEMINI_API_KEY de Google AI Studio
+
+# 3. Iniciar servidor de desarrollo
 npm run dev
 
-# Abrir en el navegador:
-http://localhost:3000
+# 4. Acceder al sistema centralizado:
+# http://localhost:3000/
 ```
 
 ---
 
-## ☁️ Opciones de Despliegue hacia Google Cloud Run
+## 🚀 Despliegue a Google Cloud Run
 
-### Opción 1: Despliegue con `gcloud` CLI (Automático)
-Si tienes instalado Google Cloud SDK:
 ```bash
-# Simplemente ejecuta el archivo incluido:
+# Despliegue automatizado
 deploy-cloudrun.bat
 ```
-O mediante el comando directo:
+O con `gcloud`:
 ```bash
 gcloud run deploy cordano-pms-v1 \
-  --source . \
-  --project gen-lang-client-0862587160 \
-  --region us-west1 \
-  --allow-unauthenticated \
-  --port 8080
+  --project=gen-lang-client-0862587160 \
+  --region=us-west1 \
+  --source=. \
+  --port=8080 \
+  --allow-unauthenticated
 ```
-
-### Opción 2: Despliegue vía Google Cloud Console (Recomendado sin CLI local)
-1. Sube este proyecto a tu repositorio de GitHub (ej. `brau450unab/pms_matic` o un nuevo repositorio `cordano-pms-v1`).
-2. Ingresa a [Google Cloud Console](https://console.cloud.google.com/run?project=gen-lang-client-0862587160).
-3. Selecciona **Crear servicio** (o *Create Service*).
-4. Elige **Implementar continuamente desde un repositorio** (Cloud Build).
-5. Selecciona el repositorio y la rama `main`.
-6. Asigna el nombre de servicio: `cordano-pms-v1`.
-7. Región: `us-west1`.
-8. ¡Listo! Cloud Run compilará con el `Dockerfile` incluido y publicará la URL de tu aplicación independiente.
-
-### Opción 3: Despliegue con Google Cloud Build
-El proyecto ya incluye `cloudbuild.yaml`:
-```bash
-gcloud builds submit --config cloudbuild.yaml --project gen-lang-client-0862587160
-```
+- **Microservicio Cloud Run**: `https://cordano-pms-v1-349577440002.us-west1.run.app`
